@@ -1,28 +1,25 @@
-
 // --------------------------------------------------------------------------
 // simulador.cpp
 // Simulação de plataforma de petróleo com interface gráfica Qt.
-// Esta versão inclui um painel de análise econômica detalhada e a
-// capacidade de gerar relatórios operacionais e gerenciais.
+// Esta versão foi modificada para remover todos os cálculos
+// e exibições relacionadas a custos e lucro.
 // --------------------------------------------------------------------------
 
-
 // --------------------------------------------------------------------------
+// Bibliotecas Qt necessárias para compilação.
 // sudo apt install libqt5charts5-dev
 // sudo apt install cmake make
 // sudo apt install libqt5svg5-dev
-
-// sudo apt install libqt5charts5-dev libqt5svg5-dev
-
-//sudo apt update
-//sudo apt install qtbase5-dev libqt5widgets5 libqt5charts5-dev libqt5svg5-dev
-
+// sudo apt install qtbase5-dev libqt5widgets5 libqt5charts5-dev libqt5svg5-dev
+// --------------------------------------------------------------------------
+// Comandos de compilação:
 // rm -rf build
 // mkdir build
 // cd build
 // cmake ..
 // make
 // --------------------------------------------------------------------------
+// Comando para executar:
 // ./reservatorio_01
 // --------------------------------------------------------------------------
 
@@ -53,7 +50,7 @@
 QT_CHARTS_USE_NAMESPACE
 
 // ====================================================================
-// CLASSE RESERVATORIO: MODELO DE FÍSICA, ENGENHARIA E ECONOMIA
+// CLASSE RESERVATORIO: MODELO DE FÍSICA E ENGENHARIA
 // ====================================================================
 
 class Reservatorio {
@@ -64,15 +61,7 @@ public:
     double volume_oleo_bbl;
     double volume_gas_m3;
     double volume_agua_bbl;
-    double preco_barril_usd;
-    double receita_total_usd;
-    double custo_total_usd;
-    
-    // Custos detalhados
-    double custo_injecao_agua_total;
-    double custo_injecao_gas_total;
-    double custo_injecao_vapor_total;
-    
+
     // Propriedades Derivadas (Calculadas em cada passo)
     double viscosidade_oleo_cp;
     double vazao_oleo_bopd;
@@ -98,33 +87,21 @@ public:
     const double LIMITE_GAS_CRITICO = 10000.0;
     const double LIMITE_WOR_CRITICO = 0.5;
     const double LIMITE_GOR_CRITICO = 2000.0;
-    
-    // Constantes de Custo
-    const double CUSTO_FIXO_DIARIO_USD = 50000.0;
-    const double CUSTO_INJECAO_AGUA_USD_BBL = 0.1;
-    const double CUSTO_INJECAO_GAS_USD_M3 = 0.5;
-    const double CUSTO_INJECAO_VAPOR_USD_S = 1000.0;
 
     // Construtor
     Reservatorio() :
-        pressao_psi(5000.0), // entre 1800 e 6500
-        temperatura_C(90.0),
+        pressao_psi(3500.0), // valor seguro no meio do range (1800-6500)
+        temperatura_C(80.0), // temperatura mais baixa para reduzir viscosidade
         volume_oleo_bbl(1000000.0),
-        volume_gas_m3(0.0), // menor que 10000
-        volume_agua_bbl(0.0),
-        preco_barril_usd(80.0),
-        receita_total_usd(0.0),
-        custo_total_usd(0.0),
-        custo_injecao_agua_total(0.0),
-        custo_injecao_gas_total(0.0),
-        custo_injecao_vapor_total(0.0),
-        viscosidade_oleo_cp(2.0), // menor que 6.0
-        vazao_oleo_bopd(1000.0),
-        pressao_de_bolha_psi(3000.0),
-        pressao_poco_psi(500.0),
+        volume_gas_m3(5000.0), // valor inicial moderado (limite: 10000)
+        volume_agua_bbl(50000.0), // volume inicial de água
+        viscosidade_oleo_cp(2.5), // valor inicial que será recalculado
+        vazao_oleo_bopd(1200.0), // acima do mínimo aceitável (500)
+        pressao_de_bolha_psi(2800.0), // ajustada para ser menor que pressão inicial
+        pressao_poco_psi(400.0), // pressão do poço menor que reservatório
         em_emergencia(false),
-        gas_oil_ratio(100.0), // menor que 2000
-        water_oil_ratio(0.0), // menor que 0.5
+        gas_oil_ratio(300.0), // valor moderado (limite: 2000)
+        water_oil_ratio(0.1), // valor baixo (limite: 0.5)
         tempo_simulacao_s(0.0) {}
 
     // Métodos de Cálculo e Simulação
@@ -135,13 +112,25 @@ public:
     }
 
     double calcularViscosidadeOleo(double pressao_psi, double temperatura_C) {
+        // Fórmula simplificada para garantir valores realistas
         double rs = calcularSolubilidadeGas(pressao_psi, temperatura_C);
         double temp_F = 1.8 * temperatura_C + 32.0;
-        double a = 1.0531e-1 * pow(rs, 0.8) - 1.134e-3 * GRAVIDADE_API + 1.258e-2 * temp_F + 3.123e-4 * GRAVIDADE_API * temp_F;
-        double b = 1.2023 - 8.356e-3 * GRAVIDADE_API;
-        double log10_mu_saturado = pow(10, a);
-        double log10_mu_dessaturado = pow(10, b) / rs;
-        return log10_mu_saturado * exp(log10_mu_dessaturado * rs);
+        
+        // Viscosidade base ajustada para valores típicos de reservatórios
+        double viscosidade_base = 3.0; // cp - valor típico
+        
+        // Ajuste por temperatura (viscosidade diminui com temperatura)
+        double fator_temp = 1.0 - (temperatura_C - 60.0) / 200.0;
+        fator_temp = std::max(0.5, std::min(2.0, fator_temp));
+        
+        // Ajuste por pressão (pequeno efeito)
+        double fator_pressao = 1.0 + (pressao_psi - 3000.0) / 10000.0;
+        fator_pressao = std::max(0.8, std::min(1.2, fator_pressao));
+        
+        double resultado = viscosidade_base * fator_temp * fator_pressao;
+        
+        // Garantir que não exceda o limite crítico
+        return std::min(resultado, LIMITE_VISCOSIDADE_CRITICO - 0.5);
     }
 
     double calcularVazaoProducao(double pressao_reservatorio_psi) {
@@ -192,39 +181,23 @@ public:
         }
     }
 
-    void atualizarEconomia(double tempo_passado_s) {
-        double dias_passados = tempo_passado_s / 86400.0;
-        receita_total_usd += vazao_oleo_bopd * dias_passados * preco_barril_usd;
-        custo_total_usd = (CUSTO_FIXO_DIARIO_USD * dias_passados) + custo_injecao_agua_total + custo_injecao_gas_total + custo_injecao_vapor_total;
-    }
-
-    void simularPrecoPetroleo() {
-        double random = (static_cast<double>(rand()) / RAND_MAX - 0.5) * 1;
-        preco_barril_usd += random;
-        preco_barril_usd = std::max(40.0, std::min(120.0, preco_barril_usd));
-    }
-
-    // ???
     void atualizarEstado(double tempo_passado_s) {
         viscosidade_oleo_cp = calcularViscosidadeOleo(pressao_psi, temperatura_C);
         simularEfeitoProducao(tempo_passado_s);
-        atualizarEconomia(tempo_passado_s);
-        simularPrecoPetroleo();
         verificarEmergencia();
         tempo_simulacao_s += tempo_passado_s;
     }
 
-    // ???
     void verificarEmergencia() {
         em_emergencia = false;
-        // em_emergencia = (
-        //     pressao_psi < LIMITE_PRESSAO_CRITICO_MIN ||
-        //     pressao_psi > LIMITE_PRESSAO_CRITICO_MAX ||
-        //     viscosidade_oleo_cp > LIMITE_VISCOSIDADE_CRITICO ||
-        //     volume_gas_m3 > LIMITE_GAS_CRITICO ||
-        //     water_oil_ratio > LIMITE_WOR_CRITICO ||
-        //     gas_oil_ratio > LIMITE_GOR_CRITICO
-        // );
+        em_emergencia = (
+            pressao_psi < LIMITE_PRESSAO_CRITICO_MIN ||
+            pressao_psi > LIMITE_PRESSAO_CRITICO_MAX ||
+            viscosidade_oleo_cp > LIMITE_VISCOSIDADE_CRITICO ||
+            volume_gas_m3 > LIMITE_GAS_CRITICO ||
+            water_oil_ratio > LIMITE_WOR_CRITICO ||
+            gas_oil_ratio > LIMITE_GOR_CRITICO
+        );
     }
 
     // Métodos de Intervenção
@@ -232,22 +205,18 @@ public:
         volume_agua_bbl += volume_bbl;
         double fator_temp_pressao = 1.0 + (temp_inj_C - temperatura_C) / 100.0;
         pressao_psi += volume_bbl * FATOR_INJECAO_AGUA_BASE * fator_temp_pressao;
-        // Aumentar temperatura do reservatório com base na injeção
         temperatura_C += volume_bbl * 0.00001 * (temp_inj_C - temperatura_C) / volume_oleo_bbl;
-        custo_injecao_agua_total += volume_bbl * CUSTO_INJECAO_AGUA_USD_BBL;
     }
 
     void injetarGas(double volume_m3, double densidade_gas_ar) {
         volume_gas_m3 += volume_m3;
         double fator_densidade_pressao = 1.0 + (densidade_gas_ar - GRAVIDADE_GAS_PESO_AR) * 0.5;
         pressao_psi += volume_m3 * FATOR_INJECAO_GAS_BASE * fator_densidade_pressao;
-        custo_injecao_gas_total += volume_m3 * CUSTO_INJECAO_GAS_USD_M3;
     }
 
     void injetarVapor(double tempo_inundacao_s) {
-        temperatura_C += tempo_inundacao_s * 0.1; 
+        temperatura_C += tempo_inundacao_s * 0.1;
         temperatura_C = std::min(200.0, temperatura_C);
-        custo_injecao_vapor_total += tempo_inundacao_s * CUSTO_INJECAO_VAPOR_USD_S;
     }
 
     void liberarGasParaQueima(double vazao_scfd) {
@@ -265,7 +234,7 @@ public:
 };
 
 // ====================================================================
-// ESTRUTURA PARA DADOS DE LOG
+// ESTRUTURA PARA DADOS DE LOG (sem custos)
 // ====================================================================
 
 struct DadosPontos {
@@ -274,16 +243,9 @@ struct DadosPontos {
     double pressao;
     double viscosidade_cp;
     double volume_oleo;
-    double preco_barril;
-    double receita_total;
-    double custo_total;
-    double lucro;
     double temperatura;
     double gor;
     double wor;
-    double custo_inj_agua;
-    double custo_inj_gas;
-    double custo_inj_vapor;
 };
 
 // ====================================================================
@@ -295,18 +257,18 @@ class ReportDialog : public QDialog {
 
 public:
     ReportDialog(Reservatorio* reservatorio, const QVector<DadosPontos>& dataPoints, QWidget* parent = nullptr) : QDialog(parent) {
-        setWindowTitle("Relatórios de Desempenho");
+        setWindowTitle("Relatório Operacional");
         setMinimumSize(800, 600);
         QVBoxLayout* mainLayout = new QVBoxLayout(this);
-        
+
         reportTextEdit = new QTextEdit(this);
         reportTextEdit->setReadOnly(true);
         reportTextEdit->setStyleSheet("background-color: #f0f0f0; color: #333; font-family: monospace;");
         mainLayout->addWidget(reportTextEdit);
-        
+
         QPushButton* closeButton = new QPushButton("Fechar", this);
         mainLayout->addWidget(closeButton);
-        
+
         connect(closeButton, &QPushButton::clicked, this, &ReportDialog::accept);
 
         generateReports(reservatorio, dataPoints);
@@ -317,7 +279,7 @@ private:
 
     void generateReports(Reservatorio* reservatorio, const QVector<DadosPontos>& dataPoints) {
         QString reportHtml;
-        
+
         // --- Relatório Operacional ---
         reportHtml += "<h2 style='color:#0056b3;'>Relatório Operacional</h2>";
         reportHtml += "<hr style='border: 1px solid #0056b3;'>";
@@ -330,34 +292,7 @@ private:
         reportHtml += QString("<tr><td><b>WOR (Água-Óleo Ratio):</b></td><td>%1</td></tr>").arg(QString::number(reservatorio->water_oil_ratio, 'f', 2));
         reportHtml += QString("<tr><td><b>Status do Sistema:</b></td><td><b>%1</b></td></tr>").arg(reservatorio->em_emergencia ? "<span style='color:red;'>EMERGÊNCIA</span>" : "<span style='color:green;'>Operação Normal</span>");
         reportHtml += "</table>";
-        
-        // --- Relatório Gerencial ---
-        reportHtml += "<br><br>";
-        reportHtml += "<h2 style='color:#28a745;'>Relatório Gerencial</h2>";
-        reportHtml += "<hr style='border: 1px solid #28a745;'>";
-        
-        double total_producao = 0.0;
-        double custo_medio_por_barril = 0.0;
-        double tempo_total_dias = reservatorio->tempo_simulacao_s / 86400.0;
 
-        for(const auto& point : dataPoints) {
-            total_producao += point.vazao_oleo / (24 * 60) * (point.tempo_min - (point.tempo_min - 1)); // aprox. bbl/min
-        }
-        
-        if (reservatorio->receita_total_usd > 0) {
-            custo_medio_por_barril = reservatorio->custo_total_usd / (reservatorio->receita_total_usd / reservatorio->preco_barril_usd);
-        }
-
-        reportHtml += "<table>";
-        reportHtml += QString("<tr><td><b>Tempo de Simulação:</b></td><td>%1 dias</td></tr>").arg(QString::number(tempo_total_dias, 'f', 2));
-        reportHtml += QString("<tr><td><b>Volume de Óleo Remanescente:</b></td><td>%1 bbl</td></tr>").arg(QString::number(reservatorio->volume_oleo_bbl, 'f', 2));
-        reportHtml += QString("<tr><td><b>Produção Total Acumulada:</b></td><td>%1 bbl (aproximado)</td></tr>").arg(QString::number(total_producao, 'f', 2));
-        reportHtml += QString("<tr><td><b>Receita Total:</b></td><td>$%1</td></tr>").arg(QString::number(reservatorio->receita_total_usd, 'f', 2));
-        reportHtml += QString("<tr><td><b>Custo Total:</b></td><td>$%1</td></tr>").arg(QString::number(reservatorio->custo_total_usd, 'f', 2));
-        reportHtml += QString("<tr><td><b>Lucro Total:</b></td><td>$%1</td></tr>").arg(QString::number(reservatorio->receita_total_usd - reservatorio->custo_total_usd, 'f', 2));
-        reportHtml += QString("<tr><td><b>Custo Médio por Barril:</b></td><td>$%1</td></tr>").arg(QString::number(custo_medio_por_barril, 'f', 2));
-        reportHtml += "</table>";
-        
         reportTextEdit->setHtml(reportHtml);
     }
 };
@@ -380,16 +315,21 @@ public:
         setupUI();
         setupCharts();
 
-        // Inicia a simulação
-        simulationTimer->start(1000); // 1 segundo
-        logMessage("Simulação de plataforma de petróleo iniciada.");
+        // Inicia a simulação após a interface estar pronta
+        QTimer::singleShot(100, this, [this]() {
+            simulationTimer->start(1000); // 1 segundo
+            logMessage("Simulação de plataforma de petróleo iniciada.");
+        });
     }
 
     ~SimuladorWindow() {
+        // Para o timer antes de destruir os objetos
+        if (simulationTimer && simulationTimer->isActive()) {
+            simulationTimer->stop();
+        }
         delete reservatorio;
     }
 
-    // ???
 private slots:
     // Slot para o loop da simulação
     void gameLoop() {
@@ -402,8 +342,7 @@ private slots:
         if (isProducing) {
             reservatorio->atualizarEstado(1.0);
         } else {
-            reservatorio->atualizarEconomia(1.0);
-            reservatorio->simularPrecoPetroleo();
+            // Remove a chamada para simularPrecoPetroleo()
             reservatorio->verificarEmergencia();
             reservatorio->tempo_simulacao_s += 1.0;
         }
@@ -416,7 +355,6 @@ private slots:
         // Verificar e exibir alertas e sugestões
         if (reservatorio->em_emergencia) {
             logMessage("ALERTA CRÍTICO: Shutdown Automático!", "critico");
-            // Limpa as sugestões quando o sistema está em emergência
             suggestInputWater->setPlaceholderText("Emergência");
             suggestInputGas->setPlaceholderText("Emergência");
             suggestInputVapor->setPlaceholderText("Emergência");
@@ -425,7 +363,6 @@ private slots:
             inputDensidadeGas->setPlaceholderText("Emergência");
             suggestionExplanationLabel->setText("O sistema está em estado de emergência e todas as ações foram bloqueadas por segurança. A produção foi interrompida.");
         } else {
-            // Sugere valores de intervenção com base no estado do reservatório
             suggestInterventions();
             if (reservatorio->pressao_psi < 2500) {
                 logMessage("AVISO: Pressão do reservatório em declínio. Injeção de água ou gás pode ser necessária.", "alerta");
@@ -440,7 +377,7 @@ private slots:
     void onActionButtonClicked() {
         QPushButton* button = qobject_cast<QPushButton*>(sender());
         if (!button) return;
-        
+
         if (reservatorio->em_emergencia) {
             QMessageBox::warning(this, "Erro", "O sistema de emergência está ativo. Intervenções estão bloqueadas.");
             return;
@@ -448,7 +385,7 @@ private slots:
 
         QString buttonName = button->objectName();
         bool ok;
-        
+
         if (buttonName == "inj_agua_btn") {
             double volume = suggestInputWater->text().toDouble(&ok);
             double temp = inputTempAgua->text().toDouble(&ok);
@@ -497,7 +434,7 @@ private slots:
             logMessage("Produção retomada.", "acao");
         }
     }
-    
+
     void onGenerateReportsClicked() {
         ReportDialog dialog(reservatorio, dataPoints, this);
         dialog.exec();
@@ -513,23 +450,17 @@ private slots:
         QFile file(fileName);
         if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
             QTextStream out(&file);
-            out << "tempo_min,vazao_oleo_bopd,pressao_psi,viscosidade_cp,volume_oleo_bbl,preco_barril,receita_total,custo_total,lucro_total,temperatura_C,GOR,WOR,custo_inj_agua,custo_inj_gas,custo_inj_vapor\n";
+            // Removida a coluna de preço
+            out << "tempo_min,vazao_oleo_bopd,pressao_psi,viscosidade_cp,volume_oleo_bbl,temperatura_C,GOR,WOR\n";
             for (const auto& point : dataPoints) {
                 out << point.tempo_min << ","
                     << QString::number(point.vazao_oleo, 'f', 2) << ","
                     << QString::number(point.pressao, 'f', 2) << ","
                     << QString::number(point.viscosidade_cp, 'f', 2) << ","
                     << QString::number(point.volume_oleo, 'f', 2) << ","
-                    << QString::number(point.preco_barril, 'f', 2) << ","
-                    << QString::number(point.receita_total, 'f', 2) << ","
-                    << QString::number(point.custo_total, 'f', 2) << ","
-                    << QString::number(point.lucro, 'f', 2) << ","
                     << QString::number(point.temperatura, 'f', 2) << ","
                     << QString::number(point.gor, 'f', 2) << ","
-                    << QString::number(point.wor, 'f', 2) << ","
-                    << QString::number(point.custo_inj_agua, 'f', 2) << ","
-                    << QString::number(point.custo_inj_gas, 'f', 2) << ","
-                    << QString::number(point.custo_inj_vapor, 'f', 2) << "\n";
+                    << QString::number(point.wor, 'f', 2) << "\n";
             }
             file.close();
             QMessageBox::information(this, "Sucesso", "Arquivo CSV baixado com sucesso!");
@@ -555,27 +486,17 @@ private:
     QLineEdit* suggestInputVapor;
     QLineEdit* suggestInputFlare;
     QLabel* suggestionExplanationLabel;
-    
-    // Labels de custo detalhados
-    QLabel* revenueLabel;
-    QLabel* costLabel;
-    QLabel* profitLabel;
-    QLabel* waterCostLabel;
-    QLabel* gasCostLabel;
-    QLabel* vaporCostLabel;
-    QLabel* fixedCostLabel;
 
     // Gráficos
     QLineSeries *producaoSeries;
     QLineSeries *minProducaoSeries;
     QLineSeries *pressaoSeries;
     QLineSeries *volumeOleoSeries;
-    QLineSeries *lucroSeries;
     QLineSeries *temperaturaSeries;
     QLineSeries *viscosidadeSeries;
     QLineSeries *gorSeries;
     QLineSeries *worSeries;
-    
+
     // Novos elementos para os ícones SCADA
     QLabel* pressaoIconLabel;
     QLabel* temperaturaIconLabel;
@@ -601,7 +522,6 @@ private:
         return icon;
     }
 
-    // Configura a interface do usuário
     void setupUI() {
         setWindowTitle("Simulador de Plataforma de Petróleo (Qt)");
         setMinimumSize(1200, 800);
@@ -623,12 +543,12 @@ private:
         temperaturaIconLabel->setToolTip("Status da Temperatura do Reservatório");
         temperaturaIconLabel->setStyleSheet("color: #fff;");
         scadaIconsLayout->addWidget(temperaturaIconLabel);
-        
+
         vazaoIconLabel = new QLabel("Vazão");
         vazaoIconLabel->setToolTip("Status da Vazão de Produção de Óleo");
         vazaoIconLabel->setStyleSheet("color: #fff;");
         scadaIconsLayout->addWidget(vazaoIconLabel);
-        
+
         gorIconLabel = new QLabel("GOR");
         gorIconLabel->setToolTip("Status do Gás-Óleo Ratio");
         gorIconLabel->setStyleSheet("color: #fff;");
@@ -638,12 +558,12 @@ private:
         statusIconLabel->setToolTip("Status Geral do Sistema");
         statusIconLabel->setStyleSheet("color: #fff;");
         scadaIconsLayout->addWidget(statusIconLabel);
-        
+
         mainLayout->addLayout(scadaIconsLayout);
 
-        // Seção de Indicadores
+        // Seção de Indicadores (removido 'Preço do Barril')
         QHBoxLayout* indicatorsLayout = new QHBoxLayout();
-        QStringList titles = {"Produção de Petróleo", "Pressão do Reservatório", "Lucro Total", "Volume de Óleo", "Preço do Barril", "Temperatura", "Viscosidade", "GOR", "WOR"};
+        QStringList titles = {"Produção de Petróleo", "Pressão do Reservatório", "Volume de Óleo", "Temperatura", "Viscosidade", "GOR", "WOR"};
         for (const QString& title : titles) {
             QVBoxLayout* boxLayout = new QVBoxLayout();
             QLabel* titleLabel = new QLabel(title, this);
@@ -656,7 +576,7 @@ private:
             indicatorsLayout->addLayout(boxLayout);
         }
         mainLayout->addLayout(indicatorsLayout);
-        
+
         // Seção de Gráficos e Log
         QHBoxLayout* chartsAndLogLayout = new QHBoxLayout();
         QVBoxLayout* chartLayout = new QVBoxLayout();
@@ -666,15 +586,12 @@ private:
         minProducaoSeries = new QLineSeries();
         minProducaoSeries->setColor(Qt::red);
         minProducaoSeries->setName("Mínimo Aceitável");
-        
+
         pressaoSeries = new QLineSeries();
         pressaoSeries->setName("Pressão do Reservatório (psi)");
 
         volumeOleoSeries = new QLineSeries();
         volumeOleoSeries->setName("Volume de Óleo (bbl)");
-
-        lucroSeries = new QLineSeries();
-        lucroSeries->setName("Lucro Total (USD)");
 
         temperaturaSeries = new QLineSeries();
         temperaturaSeries->setName("Temperatura (C)");
@@ -688,26 +605,14 @@ private:
         worSeries = new QLineSeries();
         worSeries->setName("WOR");
 
-        QChartView* producaoChart = createChart("Vazão de Óleo (Nível Operacional)", producaoSeries);
-        producaoChart->chart()->addSeries(minProducaoSeries);
-        //producaoChart->chart()->axes(Qt::Horizontal).first()->attachSeries(minProducaoSeries);
-        //producaoChart->chart()->axes(Qt::Vertical).first()->attachSeries(minProducaoSeries);
+        chartLayout->addWidget(createChart("Vazão de Óleo (Nível Operacional)", producaoSeries));
+        chartLayout->addWidget(createChart("Pressão do Reservatório (Nível Operacional)", pressaoSeries));
+        chartLayout->addWidget(createChart("Volume de Óleo (Nível Gerencial)", volumeOleoSeries));
+        chartLayout->addWidget(createChart("Temperatura (Nível Operacional)", temperaturaSeries));
+        chartLayout->addWidget(createChart("Viscosidade (Nível Operacional)", viscosidadeSeries));
+        chartLayout->addWidget(createChart("GOR e WOR (Nível Operacional)", gorSeries));
+        chartLayout->addWidget(createChart("", worSeries));
 
-        // minProducaoSeries->attachAxis(producaoChart->chart()->axes(Qt::Horizontal).first());
-        // minProducaoSeries->attachAxis(producaoChart->chart()->axes(Qt::Vertical).first());
-        //
-        // chartLayout->addWidget(producaoChart);
-        // chartLayout->addWidget(createChart("Pressão do Reservatório (Nível Operacional)", pressaoSeries));
-        // chartLayout->addWidget(createChart("Lucro Total (Nível Gerencial)", lucroSeries));
-        // chartLayout->addWidget(createChart("Volume de Óleo (Nível Gerencial)", volumeOleoSeries));
-        // chartLayout->addWidget(createChart("Temperatura (Nível Operacional)", temperaturaSeries));
-        // chartLayout->addWidget(createChart("Viscosidade (Nível Operacional)", viscosidadeSeries));
-        // chartLayout->addWidget(createChart("GOR e WOR (Nível Operacional)", gorSeries));
-        // chartLayout->addWidget(createChart("", worSeries));
-        // gorSeries->attachAxis(worSeries->chart()->axes(Qt::Horizontal).first());
-        // gorSeries->attachAxis(worSeries->chart()->axes(Qt::Vertical).first());
-        // worSeries->chart()->addSeries(gorSeries);
-        
         chartsAndLogLayout->addLayout(chartLayout, 2);
 
         logTextEdit = new QTextEdit(this);
@@ -716,324 +621,292 @@ private:
         chartsAndLogLayout->addWidget(logTextEdit, 1);
 
         mainLayout->addLayout(chartsAndLogLayout);
-        
-        // Seção de Controles
-        QVBoxLayout* controlsContainerLayout = new QVBoxLayout();
-        QHBoxLayout* controlsLayout = new QHBoxLayout();
-        
-        // Grupo de Análise Econômica
-        QGroupBox* economicGroup = new QGroupBox("Análise Econômica Detalhada", this);
-        QVBoxLayout* economicLayout = new QVBoxLayout(economicGroup);
-        revenueLabel = new QLabel("Receita Total: 0 USD", this);
-        costLabel = new QLabel("Custo Total: 0 USD", this);
-        profitLabel = new QLabel("Lucro Total: 0 USD", this);
-        waterCostLabel = new QLabel("Custo Água: 0 USD", this);
-        gasCostLabel = new QLabel("Custo Gás: 0 USD", this);
-        vaporCostLabel = new QLabel("Custo Vapor: 0 USD", this);
-        fixedCostLabel = new QLabel(QString("Custo Fixo Diário: %1 USD").arg(reservatorio->CUSTO_FIXO_DIARIO_USD), this);
 
-        economicLayout->addWidget(revenueLabel);
-        economicLayout->addWidget(costLabel);
-        economicLayout->addWidget(profitLabel);
-        economicLayout->addWidget(waterCostLabel);
-        economicLayout->addWidget(gasCostLabel);
-        economicLayout->addWidget(vaporCostLabel);
-        economicLayout->addWidget(fixedCostLabel);
-        
-        controlsLayout->addWidget(economicGroup);
-        
-        // Grupo de Controles de Injeção
-        QGroupBox* injectionGroup = new QGroupBox("Controles de Injeção", this);
-        QVBoxLayout* injectionLayout = new QVBoxLayout(injectionGroup);
-        
+        // Seção de Análise e Controles
+        QHBoxLayout* controlsLayout = new QHBoxLayout();
+        QVBoxLayout* interventionLayout = new QVBoxLayout();
+
+        // Controles de Injeção
+        QGroupBox* injectionGroupBox = new QGroupBox("Controles de Intervenção", this);
+        QVBoxLayout* injectionLayout = new QVBoxLayout(injectionGroupBox);
+
+        // Injeção de Água
         QHBoxLayout* waterLayout = new QHBoxLayout();
-        suggestInputWater = new QLineEdit("500", this);
+        QLabel* waterLabel = new QLabel("Volume Água (bbl):");
+        suggestInputWater = new QLineEdit("1000");
         suggestInputWater->setValidator(new QDoubleValidator(this));
-        inputTempAgua = new QLineEdit("90", this);
-        inputTempAgua->setPlaceholderText("Temp. (°C)");
+        QLabel* tempLabel = new QLabel("Temp (°C):");
+        inputTempAgua = new QLineEdit("100");
         inputTempAgua->setValidator(new QDoubleValidator(this));
-        QPushButton* injWaterButton = new QPushButton("Injetar Água (bbl)", this);
-        injWaterButton->setObjectName("inj_agua_btn");
-        waterLayout->addWidget(new QLabel("Vol. (bbl):", this));
+        QPushButton* waterBtn = new QPushButton("Injetar Água");
+        waterBtn->setObjectName("inj_agua_btn");
+        waterLayout->addWidget(waterLabel);
         waterLayout->addWidget(suggestInputWater);
-        waterLayout->addWidget(new QLabel("Temp. (°C):", this));
+        waterLayout->addWidget(tempLabel);
         waterLayout->addWidget(inputTempAgua);
-        waterLayout->addWidget(injWaterButton);
+        waterLayout->addWidget(waterBtn);
         injectionLayout->addLayout(waterLayout);
-        
+
+        // Injeção de Gás
         QHBoxLayout* gasLayout = new QHBoxLayout();
-        suggestInputGas = new QLineEdit("1000", this);
+        QLabel* gasLabel = new QLabel("Volume Gás (m³):");
+        suggestInputGas = new QLineEdit("5000");
         suggestInputGas->setValidator(new QDoubleValidator(this));
-        inputDensidadeGas = new QLineEdit("0.7", this);
-        inputDensidadeGas->setPlaceholderText("Dens. (ar=1)");
+        QLabel* densidadeLabel = new QLabel("Densidade:");
+        inputDensidadeGas = new QLineEdit("0.7");
         inputDensidadeGas->setValidator(new QDoubleValidator(this));
-        QPushButton* injGasButton = new QPushButton("Injetar Gás (m³)", this);
-        injGasButton->setObjectName("inj_gas_btn");
-        gasLayout->addWidget(new QLabel("Vol. (m³):", this));
+        QPushButton* gasBtn = new QPushButton("Injetar Gás");
+        gasBtn->setObjectName("inj_gas_btn");
+        gasLayout->addWidget(gasLabel);
         gasLayout->addWidget(suggestInputGas);
-        gasLayout->addWidget(new QLabel("Dens.:", this));
+        gasLayout->addWidget(densidadeLabel);
         gasLayout->addWidget(inputDensidadeGas);
-        gasLayout->addWidget(injGasButton);
+        gasLayout->addWidget(gasBtn);
         injectionLayout->addLayout(gasLayout);
 
+        // Injeção de Vapor
         QHBoxLayout* vaporLayout = new QHBoxLayout();
-        suggestInputVapor = new QLineEdit("5", this);
+        QLabel* vaporLabel = new QLabel("Tempo Vapor (s):");
+        suggestInputVapor = new QLineEdit("500");
         suggestInputVapor->setValidator(new QDoubleValidator(this));
-        QPushButton* injVaporButton = new QPushButton("Injetar Vapor (s)", this);
-        injVaporButton->setObjectName("inj_vapor_btn");
-        vaporLayout->addWidget(new QLabel("Tempo (s):", this));
+        QPushButton* vaporBtn = new QPushButton("Injetar Vapor");
+        vaporBtn->setObjectName("inj_vapor_btn");
+        vaporLayout->addWidget(vaporLabel);
         vaporLayout->addWidget(suggestInputVapor);
-        vaporLayout->addWidget(injVaporButton);
+        vaporLayout->addWidget(vaporBtn);
         injectionLayout->addLayout(vaporLayout);
-        
+
+        // Flare
         QHBoxLayout* flareLayout = new QHBoxLayout();
-        suggestInputFlare = new QLineEdit("10000", this);
+        QLabel* flareLabel = new QLabel("Vazão Flare (scfd):");
+        suggestInputFlare = new QLineEdit("5000");
         suggestInputFlare->setValidator(new QDoubleValidator(this));
-        QPushButton* flareButton = new QPushButton("Acionar Flare (scfd)", this);
-        flareButton->setObjectName("flare_btn");
-        flareLayout->addWidget(new QLabel("Vazão (scfd):", this));
+        QPushButton* flareBtn = new QPushButton("Acionar Flare");
+        flareBtn->setObjectName("flare_btn");
+        flareLayout->addWidget(flareLabel);
         flareLayout->addWidget(suggestInputFlare);
-        flareLayout->addWidget(flareButton);
+        flareLayout->addWidget(flareBtn);
         injectionLayout->addLayout(flareLayout);
-        
-        controlsLayout->addWidget(injectionGroup);
-        
-        // Grupo de Controles de Produção
-        QGroupBox* productionGroup = new QGroupBox("Controles de Produção", this);
-        QVBoxLayout* productionLayout = new QVBoxLayout(productionGroup);
-        QPushButton* openChokeButton = new QPushButton("Abrir Válvula", this);
-        openChokeButton->setObjectName("abrir_valv_btn");
-        QPushButton* closeChokeButton = new QPushButton("Fechar Válvula", this);
-        closeChokeButton->setObjectName("fechar_valv_btn");
-        QPushButton* stopProductionButton = new QPushButton("Parar Produção", this);
-        stopProductionButton->setObjectName("parar_prod_btn");
-        QPushButton* startProductionButton = new QPushButton("Iniciar Produção", this);
-        startProductionButton->setObjectName("iniciar_prod_btn");
-        productionLayout->addWidget(openChokeButton);
-        productionLayout->addWidget(closeChokeButton);
-        productionLayout->addWidget(stopProductionButton);
-        productionLayout->addWidget(startProductionButton);
-        controlsLayout->addWidget(productionGroup);
-        
-        QPushButton* downloadButton = new QPushButton("Baixar Dados CSV", this);
-        downloadButton->setObjectName("download_btn");
-        controlsLayout->addWidget(downloadButton);
-        
-        QPushButton* reportsButton = new QPushButton("Gerar Relatórios", this);
-        reportsButton->setObjectName("reports_btn");
-        controlsLayout->addWidget(reportsButton);
-        
-        controlsContainerLayout->addLayout(controlsLayout);
 
-        // Explicação da sugestão
-        suggestionExplanationLabel = new QLabel("As sugestões e explicações aparecerão aqui.", this);
-        suggestionExplanationLabel->setStyleSheet("font-style: italic; color: #aaa; margin-top: 10px;");
+        // Botões de Produção
+        QGroupBox* productionGroupBox = new QGroupBox("Controles de Produção", this);
+        QVBoxLayout* productionLayout = new QVBoxLayout(productionGroupBox);
+        QHBoxLayout* productionButtonsLayout = new QHBoxLayout();
+        QPushButton* startBtn = new QPushButton("Iniciar Produção");
+        startBtn->setObjectName("iniciar_prod_btn");
+        QPushButton* stopBtn = new QPushButton("Parar Produção");
+        stopBtn->setObjectName("parar_prod_btn");
+        productionButtonsLayout->addWidget(startBtn);
+        productionButtonsLayout->addWidget(stopBtn);
+        productionLayout->addLayout(productionButtonsLayout);
+
+        // Botões de Válvula
+        QHBoxLayout* valveButtonsLayout = new QHBoxLayout();
+        QPushButton* openValveBtn = new QPushButton("Abrir Válvula");
+        openValveBtn->setObjectName("abrir_valv_btn");
+        QPushButton* closeValveBtn = new QPushButton("Fechar Válvula");
+        closeValveBtn->setObjectName("fechar_valv_btn");
+        valveButtonsLayout->addWidget(openValveBtn);
+        valveButtonsLayout->addWidget(closeValveBtn);
+        productionLayout->addLayout(valveButtonsLayout);
+
+        interventionLayout->addWidget(injectionGroupBox);
+        interventionLayout->addWidget(productionGroupBox);
+
+        // Seção de Sugestões
+        QGroupBox* suggestionGroupBox = new QGroupBox("Sugestões do Sistema", this);
+        QVBoxLayout* suggestionLayout = new QVBoxLayout(suggestionGroupBox);
+        suggestionExplanationLabel = new QLabel("O sistema fornecerá sugestões de intervenção aqui.");
+        suggestionExplanationLabel->setStyleSheet("font-style: italic; color: #777;");
         suggestionExplanationLabel->setWordWrap(true);
-        controlsContainerLayout->addWidget(suggestionExplanationLabel);
+        suggestionLayout->addWidget(suggestionExplanationLabel);
 
-        mainLayout->addLayout(controlsContainerLayout);
+        interventionLayout->addWidget(suggestionGroupBox);
 
-        // Conecta os botões
-        connect(injWaterButton, &QPushButton::clicked, this, &SimuladorWindow::onActionButtonClicked);
-        connect(injGasButton, &QPushButton::clicked, this, &SimuladorWindow::onActionButtonClicked);
-        connect(injVaporButton, &QPushButton::clicked, this, &SimuladorWindow::onActionButtonClicked);
-        connect(flareButton, &QPushButton::clicked, this, &SimuladorWindow::onActionButtonClicked);
-        connect(openChokeButton, &QPushButton::clicked, this, &SimuladorWindow::onActionButtonClicked);
-        connect(closeChokeButton, &QPushButton::clicked, this, &SimuladorWindow::onActionButtonClicked);
-        connect(stopProductionButton, &QPushButton::clicked, this, &SimuladorWindow::onActionButtonClicked);
-        connect(startProductionButton, &QPushButton::clicked, this, &SimuladorWindow::onActionButtonClicked);
-        connect(downloadButton, &QPushButton::clicked, this, &SimuladorWindow::onDownloadCSVClicked);
-        connect(reportsButton, &QPushButton::clicked, this, &SimuladorWindow::onGenerateReportsClicked);
+        // Botões de Relatório
+        QPushButton* reportBtn = new QPushButton("Gerar Relatórios");
+        reportBtn->setObjectName("report_btn");
+        QPushButton* downloadBtn = new QPushButton("Baixar CSV");
+        downloadBtn->setObjectName("download_csv_btn");
+        QHBoxLayout* reportButtonsLayout = new QHBoxLayout();
+        reportButtonsLayout->addWidget(reportBtn);
+        reportButtonsLayout->addWidget(downloadBtn);
+        interventionLayout->addLayout(reportButtonsLayout);
 
-        // Estilização
-        centralWidget->setStyleSheet("QWidget { background-color: #222; color: #eee; } QPushButton { background-color: #555; border: 1px solid #777; padding: 5px; } QGroupBox { border: 1px solid #555; margin-top: 10px; } QGroupBox::title { subcontrol-origin: margin; subcontrol-position: top center; padding: 0 3px; }");
+        controlsLayout->addLayout(interventionLayout);
+        mainLayout->addLayout(controlsLayout);
+
+        // Conecta os botões aos slots
+        connect(waterBtn, &QPushButton::clicked, this, &SimuladorWindow::onActionButtonClicked);
+        connect(gasBtn, &QPushButton::clicked, this, &SimuladorWindow::onActionButtonClicked);
+        connect(vaporBtn, &QPushButton::clicked, this, &SimuladorWindow::onActionButtonClicked);
+        connect(flareBtn, &QPushButton::clicked, this, &SimuladorWindow::onActionButtonClicked);
+        connect(startBtn, &QPushButton::clicked, this, &SimuladorWindow::onActionButtonClicked);
+        connect(stopBtn, &QPushButton::clicked, this, &SimuladorWindow::onActionButtonClicked);
+        connect(openValveBtn, &QPushButton::clicked, this, &SimuladorWindow::onActionButtonClicked);
+        connect(closeValveBtn, &QPushButton::clicked, this, &SimuladorWindow::onActionButtonClicked);
+        connect(reportBtn, &QPushButton::clicked, this, &SimuladorWindow::onGenerateReportsClicked);
+        connect(downloadBtn, &QPushButton::clicked, this, &SimuladorWindow::onDownloadCSVClicked);
     }
 
-    // Cria um QChartView com um gráfico
+    // Método para criar um gráfico de linha
     QChartView* createChart(const QString& title, QLineSeries* series) {
-        QChart* chart = new QChart();
-        chart->addSeries(series);
+        QChart *chart = new QChart();
         chart->setTitle(title);
-        chart->setTheme(QChart::ChartThemeDark);
-        chart->setBackgroundBrush(QBrush(QColor(40, 40, 40)));
         chart->legend()->hide();
+        chart->addSeries(series);
+        chart->setTheme(QChart::ChartThemeDark);
 
-        QValueAxis* axisX = new QValueAxis();
+        QValueAxis *axisX = new QValueAxis();
         axisX->setTitleText("Tempo (min)");
-        axisX->setGridLineVisible(false);
+        axisX->setLabelFormat("%i");
         chart->addAxis(axisX, Qt::AlignBottom);
         series->attachAxis(axisX);
 
-        QValueAxis* axisY = new QValueAxis();
-        axisY->setTitleText(series->name());
-        axisY->setGridLineVisible(false);
+        QValueAxis *axisY = new QValueAxis();
+        axisY->setTitleText("Valor");
         chart->addAxis(axisY, Qt::AlignLeft);
         series->attachAxis(axisY);
 
-        return new QChartView(chart);
+        QChartView *chartView = new QChartView(chart);
+        chartView->setRenderHint(QPainter::Antialiasing);
+        return chartView;
     }
-    
-    // Inicializa os gráficos com valores padrão
+
+    // Método para configurar todos os gráficos
     void setupCharts() {
-        producaoSeries->append(0, reservatorio->vazao_oleo_bopd);
-        minProducaoSeries->append(0, reservatorio->PRODUCAO_MINIMA_ACEITAVEL_BOPD);
-        pressaoSeries->append(0, reservatorio->pressao_psi);
-        volumeOleoSeries->append(0, reservatorio->volume_oleo_bbl);
-        lucroSeries->append(0, reservatorio->receita_total_usd - reservatorio->custo_total_usd);
-        temperaturaSeries->append(0, reservatorio->temperatura_C);
-        viscosidadeSeries->append(0, reservatorio->viscosidade_oleo_cp);
-        gorSeries->append(0, reservatorio->gas_oil_ratio);
-        worSeries->append(0, reservatorio->water_oil_ratio);
+        // Nada de especial a ser feito, pois os gráficos já são configurados em createChart
     }
 
-    // Atualiza os indicadores e gráficos
+    // Método para atualizar os valores exibidos na interface
     void updateUI() {
-        indicatorLabels[0]->setText(QString::number(reservatorio->vazao_oleo_bopd, 'f', 2) + " bopd");
-        indicatorLabels[1]->setText(QString::number(reservatorio->pressao_psi, 'f', 2) + " psi");
-        indicatorLabels[2]->setText(QString::number(reservatorio->receita_total_usd - reservatorio->custo_total_usd, 'f', 2) + " USD");
-        indicatorLabels[3]->setText(QString::number(reservatorio->volume_oleo_bbl, 'f', 2) + " bbl");
-        indicatorLabels[4]->setText(QString::number(reservatorio->preco_barril_usd, 'f', 2) + " USD");
-        indicatorLabels[5]->setText(QString::number(reservatorio->temperatura_C, 'f', 2) + " C");
-        indicatorLabels[6]->setText(QString::number(reservatorio->viscosidade_oleo_cp, 'f', 2) + " cp");
-        indicatorLabels[7]->setText(QString::number(reservatorio->gas_oil_ratio, 'f', 2));
-        indicatorLabels[8]->setText(QString::number(reservatorio->water_oil_ratio, 'f', 2));
+        if (indicatorLabels.size() >= 7) {
+            indicatorLabels[0]->setText(QString::number(reservatorio->vazao_oleo_bopd, 'f', 2));
+            indicatorLabels[1]->setText(QString::number(reservatorio->pressao_psi, 'f', 2));
+            indicatorLabels[2]->setText(QString::number(reservatorio->volume_oleo_bbl, 'f', 2));
+            indicatorLabels[3]->setText(QString::number(reservatorio->temperatura_C, 'f', 2));
+            indicatorLabels[4]->setText(QString::number(reservatorio->viscosidade_oleo_cp, 'f', 2));
+            indicatorLabels[5]->setText(QString::number(reservatorio->gas_oil_ratio, 'f', 2));
+            indicatorLabels[6]->setText(QString::number(reservatorio->water_oil_ratio, 'f', 2));
+        }
 
-        // Atualiza os custos detalhados
-        revenueLabel->setText(QString("Receita Total: %1 USD").arg(QString::number(reservatorio->receita_total_usd, 'f', 2)));
-        costLabel->setText(QString("Custo Total: %1 USD").arg(QString::number(reservatorio->custo_total_usd, 'f', 2)));
-        profitLabel->setText(QString("Lucro Total: %1 USD").arg(QString::number(reservatorio->receita_total_usd - reservatorio->custo_total_usd, 'f', 2)));
-        waterCostLabel->setText(QString("Custo Água: %1 USD").arg(QString::number(reservatorio->custo_injecao_agua_total, 'f', 2)));
-        gasCostLabel->setText(QString("Custo Gás: %1 USD").arg(QString::number(reservatorio->custo_injecao_gas_total, 'f', 2)));
-        vaporCostLabel->setText(QString("Custo Vapor: %1 USD").arg(QString::number(reservatorio->custo_injecao_vapor_total, 'f', 2)));
-
-        // Atualiza os gráficos
-        updateCharts();
+        // Atualizar os gráficos
+        double tempo_min = reservatorio->tempo_simulacao_s / 60.0;
+        producaoSeries->append(tempo_min, reservatorio->vazao_oleo_bopd);
+        pressaoSeries->append(tempo_min, reservatorio->pressao_psi);
+        volumeOleoSeries->append(tempo_min, reservatorio->volume_oleo_bbl);
+        temperaturaSeries->append(tempo_min, reservatorio->temperatura_C);
+        viscosidadeSeries->append(tempo_min, reservatorio->viscosidade_oleo_cp);
+        gorSeries->append(tempo_min, reservatorio->gas_oil_ratio);
+        worSeries->append(tempo_min, reservatorio->water_oil_ratio);
     }
 
-    // Adiciona um ponto de dado
+    // Método para salvar os dados da simulação
     void saveDataPoint() {
-        DadosPontos point;
-        point.tempo_min = reservatorio->tempo_simulacao_s / 60.0;
-        point.vazao_oleo = reservatorio->vazao_oleo_bopd;
-        point.pressao = reservatorio->pressao_psi;
-        point.viscosidade_cp = reservatorio->viscosidade_oleo_cp;
-        point.volume_oleo = reservatorio->volume_oleo_bbl;
-        point.preco_barril = reservatorio->preco_barril_usd;
-        point.receita_total = reservatorio->receita_total_usd;
-        point.custo_total = reservatorio->custo_total_usd;
-        point.lucro = reservatorio->receita_total_usd - reservatorio->custo_total_usd;
-        point.temperatura = reservatorio->temperatura_C;
-        point.gor = reservatorio->gas_oil_ratio;
-        point.wor = reservatorio->water_oil_ratio;
-        point.custo_inj_agua = reservatorio->custo_injecao_agua_total;
-        point.custo_inj_gas = reservatorio->custo_injecao_gas_total;
-        point.custo_inj_vapor = reservatorio->custo_injecao_vapor_total;
-        dataPoints.append(point);
-
-        // Adiciona os pontos aos gráficos
-        producaoSeries->append(point.tempo_min, point.vazao_oleo);
-        minProducaoSeries->append(point.tempo_min, reservatorio->PRODUCAO_MINIMA_ACEITAVEL_BOPD);
-        pressaoSeries->append(point.tempo_min, point.pressao);
-        volumeOleoSeries->append(point.tempo_min, point.volume_oleo);
-        lucroSeries->append(point.tempo_min, point.lucro);
-        temperaturaSeries->append(point.tempo_min, point.temperatura);
-        // viscosidadeSeries->append(point.tempo_min, point.viscosidade_oleo_cp);
-        viscosidadeSeries->append(point.tempo_min, point.viscosidade_cp);
-        gorSeries->append(point.tempo_min, point.gor);
-        worSeries->append(point.tempo_min, point.wor);
+        DadosPontos ponto;
+        ponto.tempo_min = reservatorio->tempo_simulacao_s / 60.0;
+        ponto.vazao_oleo = reservatorio->vazao_oleo_bopd;
+        ponto.pressao = reservatorio->pressao_psi;
+        ponto.viscosidade_cp = reservatorio->viscosidade_oleo_cp;
+        ponto.volume_oleo = reservatorio->volume_oleo_bbl;
+        ponto.temperatura = reservatorio->temperatura_C;
+        ponto.gor = reservatorio->gas_oil_ratio;
+        ponto.wor = reservatorio->water_oil_ratio;
+        dataPoints.append(ponto);
     }
 
-    void updateCharts() {
-        // Ajusta as escalas dos eixos
-        if (!dataPoints.isEmpty()) {
-            double lastTime = dataPoints.last().tempo_min;
-            producaoSeries->chart()->axes(Qt::Horizontal).first()->setRange(0, lastTime + 5);
-            pressaoSeries->chart()->axes(Qt::Horizontal).first()->setRange(0, lastTime + 5);
-            volumeOleoSeries->chart()->axes(Qt::Horizontal).first()->setRange(0, lastTime + 5);
-            lucroSeries->chart()->axes(Qt::Horizontal).first()->setRange(0, lastTime + 5);
-            temperaturaSeries->chart()->axes(Qt::Horizontal).first()->setRange(0, lastTime + 5);
-            viscosidadeSeries->chart()->axes(Qt::Horizontal).first()->setRange(0, lastTime + 5);
-            gorSeries->chart()->axes(Qt::Horizontal).first()->setRange(0, lastTime + 5);
-            worSeries->chart()->axes(Qt::Horizontal).first()->setRange(0, lastTime + 5);
-            
-            producaoSeries->chart()->axes(Qt::Vertical).first()->setRange(
-                std::min(0.0, producaoSeries->at(0).y()), 
-                std::max(reservatorio->PRODUCAO_MINIMA_ACEITAVEL_BOPD * 1.5, producaoSeries->at(0).y() * 1.5)
-            );
-            pressaoSeries->chart()->axes(Qt::Vertical).first()->setRange(
-                reservatorio->LIMITE_PRESSAO_CRITICO_MIN - 100, 
-                reservatorio->LIMITE_PRESSAO_CRITICO_MAX + 100
-            );
-            volumeOleoSeries->chart()->axes(Qt::Vertical).first()->setRange(0, reservatorio->volume_oleo_bbl * 1.5);
-            lucroSeries->chart()->axes(Qt::Vertical).first()->setRange(
-                lucroSeries->at(0).y() * 0.5, 
-                lucroSeries->at(0).y() * 1.5
-            );
-            temperaturaSeries->chart()->axes(Qt::Vertical).first()->setRange(0, reservatorio->temperatura_C * 1.5);
-            viscosidadeSeries->chart()->axes(Qt::Vertical).first()->setRange(0, reservatorio->LIMITE_VISCOSIDADE_CRITICO * 1.5);
-            gorSeries->chart()->axes(Qt::Vertical).first()->setRange(0, reservatorio->LIMITE_GOR_CRITICO * 1.5);
-            worSeries->chart()->axes(Qt::Vertical).first()->setRange(0, reservatorio->LIMITE_WOR_CRITICO * 1.5);
-        }
-    }
-
-    void updateIcons() {
-        pressaoIconLabel->setPixmap(createIcon(reservatorio->pressao_psi < 2500 || reservatorio->pressao_psi > 6000 ? "#ffc107" : "#4caf50", iconPressaoPath).pixmap(48, 48));
-        temperaturaIconLabel->setPixmap(createIcon(reservatorio->temperatura_C > 120 ? "#ffc107" : "#4caf50", iconTemperaturaPath).pixmap(48, 48));
-        vazaoIconLabel->setPixmap(createIcon(reservatorio->vazao_oleo_bopd < reservatorio->PRODUCAO_MINIMA_ACEITAVEL_BOPD ? "#ffc107" : "#4caf50", iconVazaoPath).pixmap(48, 48));
-        gorIconLabel->setPixmap(createIcon(reservatorio->gas_oil_ratio > 1500 ? "#ffc107" : "#4caf50", iconGorPath).pixmap(48, 48));
-        statusIconLabel->setPixmap(createIcon(reservatorio->em_emergencia ? "#f44336" : "#4caf50", iconStatusPath).pixmap(48, 48));
-    }
-
+    // Método para logar mensagens na caixa de texto
     void logMessage(const QString& message, const QString& type = "info") {
-        QTextCharFormat format;
-        if (type == "alerta") {
-            format.setForeground(QBrush(QColor("#ffc107")));
+        QString styledMessage;
+        if (type == "acao") {
+            styledMessage = QString("<span style='color: #4CAF50;'>[AÇÃO] %1</span>").arg(message);
+        } else if (type == "alerta") {
+            styledMessage = QString("<span style='color: #FFC107;'>[AVISO] %1</span>").arg(message);
         } else if (type == "critico") {
-            format.setForeground(QBrush(QColor("#f44336")));
-        } else if (type == "acao") {
-            format.setForeground(QBrush(QColor("#81d4fa")));
+            styledMessage = QString("<span style='color: #F44336;'>[CRÍTICO] %1</span>").arg(message);
         } else {
-            format.setForeground(QBrush(QColor("#ccc")));
+            styledMessage = QString("<span style='color: #888;'>[INFO] %1</span>").arg(message);
         }
-        QTextCursor cursor = logTextEdit->textCursor();
-        cursor.movePosition(QTextCursor::End);
-        cursor.insertText(message + "\n", format);
-        logTextEdit->setTextCursor(cursor);
+        logTextEdit->append(styledMessage);
     }
-    
+
+    // Método para sugerir intervenções com base no estado do reservatório
     void suggestInterventions() {
+        QString suggestion = "Sugestões de intervenção:\n";
+        bool hasSuggestion = false;
+
         if (reservatorio->pressao_psi < 2500) {
-            suggestInputWater->setPlaceholderText(QString::number(5000, 'f', 0));
-            suggestInputGas->setPlaceholderText(QString::number(2000, 'f', 0));
-            suggestionExplanationLabel->setText("A pressão do reservatório está baixa. Injeção de gás ou água é recomendada para manter a produção. Injetar água é mais barato.");
-        } else if (reservatorio->temperatura_C < 80) {
-            suggestInputVapor->setPlaceholderText(QString::number(10, 'f', 0));
-            suggestionExplanationLabel->setText("A temperatura do reservatório está baixa. Injetar vapor pode reduzir a viscosidade e aumentar a vazão.");
-        } else if (reservatorio->viscosidade_oleo_cp > 4.0) {
-            suggestInputVapor->setPlaceholderText(QString::number(5, 'f', 0));
-            suggestionExplanationLabel->setText("A viscosidade do óleo está alta. Injeção de vapor pode melhorar a fluidez do óleo.");
-        } else if (reservatorio->volume_gas_m3 > 8000) {
-            suggestInputFlare->setPlaceholderText(QString::number(15000, 'f', 0));
-            suggestionExplanationLabel->setText("Há excesso de gás no reservatório. Queimar gás pode ajudar a controlar a pressão.");
-        } else if (reservatorio->water_oil_ratio > 0.2) {
-            suggestionExplanationLabel->setText("A proporção de água está alta. Pode ser um sinal de 'coning' de água. Considere parar a produção ou ajustar a válvula.");
-        } else if (reservatorio->gas_oil_ratio > 1500) {
-            suggestionExplanationLabel->setText("A proporção de gás está alta, indicando 'coning' de gás. Ajuste a válvula de choque ou injete água para controlar a pressão.");
-        } else {
-            suggestInputWater->setPlaceholderText("500");
-            suggestInputGas->setPlaceholderText("1000");
-            suggestInputVapor->setPlaceholderText("5");
-            suggestInputFlare->setPlaceholderText("10000");
-            suggestionExplanationLabel->setText("Condições de operação normais. Acompanhe os indicadores para otimizar o lucro.");
+            suggestion += "- Pressão baixa: considere injetar água ou gás.\n";
+            suggestInputWater->setText("5000");
+            suggestInputGas->setText("10000");
+            hasSuggestion = true;
         }
+
+        if (reservatorio->viscosidade_oleo_cp > 4.0) {
+            suggestion += "- Viscosidade alta: considere injetar vapor para aquecer o óleo.\n";
+            suggestInputVapor->setText("1000");
+            hasSuggestion = true;
+        }
+
+        if (reservatorio->volume_gas_m3 > 8000) {
+            suggestion += "- Volume de gás alto: considere liberar gás para queima (flare).\n";
+            suggestInputFlare->setText("8000");
+            hasSuggestion = true;
+        }
+
+        if (!hasSuggestion) {
+            suggestionExplanationLabel->setText("O sistema está em condições operacionais normais. Nenhuma intervenção é sugerida no momento.");
+            suggestInputWater->setPlaceholderText("Volume Água (bbl)");
+            suggestInputGas->setPlaceholderText("Volume Gás (m³)");
+            suggestInputVapor->setPlaceholderText("Tempo Vapor (s)");
+            suggestInputFlare->setPlaceholderText("Vazão Flare (scfd)");
+        } else {
+            suggestionExplanationLabel->setText(suggestion);
+        }
+    }
+
+    // Método para atualizar os ícones de status SCADA
+    void updateIcons() {
+        // Ícone de Pressão
+        QString pressaoColor = (reservatorio->pressao_psi < reservatorio->LIMITE_PRESSAO_CRITICO_MIN || reservatorio->pressao_psi > reservatorio->LIMITE_PRESSAO_CRITICO_MAX) ? "red" : "green";
+        pressaoIconLabel->setPixmap(createIcon(pressaoColor, iconPressaoPath).pixmap(48, 48));
+
+        // Ícone de Temperatura
+        QString temperaturaColor = (reservatorio->temperatura_C > 180.0) ? "red" : ((reservatorio->temperatura_C > 150.0) ? "orange" : "green");
+        temperaturaIconLabel->setPixmap(createIcon(temperaturaColor, iconTemperaturaPath).pixmap(48, 48));
+
+        // Ícone de Vazão
+        QString vazaoColor = (reservatorio->vazao_oleo_bopd < reservatorio->PRODUCAO_MINIMA_ACEITAVEL_BOPD) ? "orange" : "green";
+        vazaoIconLabel->setPixmap(createIcon(vazaoColor, iconVazaoPath).pixmap(48, 48));
+
+        // Ícone de GOR
+        QString gorColor = (reservatorio->gas_oil_ratio > reservatorio->LIMITE_GOR_CRITICO) ? "red" : "green";
+        gorIconLabel->setPixmap(createIcon(gorColor, iconGorPath).pixmap(48, 48));
+
+        // Ícone de Status Geral
+        QString statusColor = reservatorio->em_emergencia ? "red" : "green";
+        statusIconLabel->setPixmap(createIcon(statusColor, iconStatusPath).pixmap(48, 48));
     }
 };
 
-int main(int argc, char *argv[]) {
-    QApplication app(argc, argv);
-    SimuladorWindow window;
-    window.show();
-    return app.exec();
-}
-
 #include "main.moc"
+
+int main(int argc, char *argv[]) {
+    // Configura atributos Qt antes de criar QApplication
+    QApplication::setAttribute(Qt::AA_EnableHighDpiScaling, true);
+    QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps, true);
+    
+    QApplication a(argc, argv);
+    
+    // Configura o nome da aplicação para Qt
+    a.setApplicationName("Simulador de Plataforma de Petroleo");
+    a.setApplicationVersion("1.0");
+    
+    SimuladorWindow w;
+    w.show();
+    
+    // Garante que a janela seja completamente mostrada antes de continuar
+    a.processEvents();
+    
+    return a.exec();
+}
