@@ -31,12 +31,15 @@ Fornecer uma ferramenta de simulação e controle para operação e monitorament
 - **Tempo Real**: Sistema de simulação contínua com timer de 1 segundo
 - **Modularidade**: Classes separadas para reservatório, interface e relatórios
 
-### Interface do Usuário
-- **Painel SCADA**: Ícones visuais com status colorido em tempo real
-- **Indicadores Numéricos**: Valores atualizados continuamente
-- **Gráficos em Tempo Real**: 7 gráficos independentes para monitoramento
-- **Sistema de Log**: Mensagens categorizadas por tipo e importância
-- **Controles de Intervenção**: Botões e campos para ações operacionais
+### Interface do Usuário (v1.2 - Redesenhada)
+- **Tema Dark Mode**: Fundo preto profissional com esquema de cores industriais
+- **Layout Responsivo**: Interface com barra de rolagem automática e grid organizacional
+- **Painel SCADA Aprimorado**: Ícones 60×60px com tooltips informativos e status colorido
+- **Indicadores em Grid**: 7 indicadores organizados em cards individuais (2×4 layout)
+- **Gráficos por Abas**: 6 abas navegáveis (Produção, Pressão, Volume, Temperatura, Viscosidade, Ratios)
+- **Sistema de Log Moderno**: Fonte monospace, fundo escuro e categorização por cores
+- **Controles Reorganizados**: Cards de intervenção em grid 2×2 com botões coloridos por função
+- **Navegação Intuitiva**: TabWidget para gráficos e ScrollArea para conteúdo extenso
 
 ## Propriedades Físicas do Reservatório
 
@@ -287,7 +290,33 @@ make
 
 ## Histórico de Melhorias
 
-### v1.1 - Correção dos Valores Iniciais e Estabilização (Atual)
+### v1.2 - Redesign Completo da Interface (Atual)
+
+#### Interface e Experiência do Usuário:
+- ✅ **Tema Dark Mode Completo**: Fundo preto profissional com esquema de cores moderno
+- ✅ **Layout Responsivo**: Barra de rolagem automática e redimensionamento inteligente
+- ✅ **Gráficos em Abas**: Sistema de navegação por abas em vez de empilhamento vertical
+- ✅ **Grid Layout**: Indicadores organizados em grid 2×4 com cards individuais
+- ✅ **Controles Reorganizados**: Layout horizontal com cards de intervenção em grid 2×2
+- ✅ **Botões Modernos**: Design com ícones, cores funcionais e efeitos hover
+- ✅ **Monitor SCADA Aprimorado**: Ícones maiores e melhor organização visual
+- ✅ **Sistema de Log Melhorado**: Fonte monospace e melhor contraste
+
+#### Melhorias Técnicas:
+- ✅ **QScrollArea**: Suporte completo para rolagem em interfaces extensas
+- ✅ **QTabWidget**: Navegação eficiente entre diferentes gráficos
+- ✅ **QGridLayout**: Organização otimizada de componentes
+- ✅ **Stylesheets CSS**: Tema visual consistente e profissional
+- ✅ **Helper Functions**: Código modularizado para criação de componentes
+
+#### Benefícios Visuais:
+- 🎨 **Interface Profissional**: Design moderno compatível com aplicações industriais
+- 📱 **Responsividade**: Adaptação a diferentes tamanhos de tela
+- 👁️ **Melhor Legibilidade**: Contraste otimizado e tipografia clara
+- ⚡ **Performance Visual**: Redução da sobrecarga visual e navegação intuitiva
+- 🎯 **Foco Operacional**: Agrupamento lógico de funcionalidades relacionadas
+
+### v1.1 - Correção dos Valores Iniciais e Estabilização
 
 #### Problemas Corrigidos:
 - ❌ **Problema**: Sistema entrava em estado de emergência imediatamente após inicialização

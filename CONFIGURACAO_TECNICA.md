@@ -1,5 +1,14 @@
 # Configuração Técnica do Simulador - Especificações Detalhadas
 
+## Versão Atual: v1.2 - Redesign Completo da Interface
+
+### Melhorias da v1.2 (Interface)
+- ✅ **Dark Mode Profissional**: Fundo preto com esquema de cores industriais
+- ✅ **Layout Responsivo**: ScrollArea automática e grid organizacional
+- ✅ **Sistema de Abas**: Navegação eficiente para gráficos
+- ✅ **Código Modularizado**: Helper functions e design patterns
+- ✅ **UX/UI Otimizada**: Cards, hover effects e hierarquia visual clara
+
 ## Parâmetros do Reservatório - Valores Otimizados (v1.1)
 
 ### Configuração da Classe Reservatorio

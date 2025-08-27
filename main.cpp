@@ -44,6 +44,10 @@
 #include <QBuffer>
 #include <QDialog>
 #include <QTextStream>
+#include <QScrollArea>
+#include <QTabWidget>
+#include <QGridLayout>
+#include <QFrame>
 #include <cmath>
 #include <algorithm>
 
@@ -524,63 +528,175 @@ private:
 
     void setupUI() {
         setWindowTitle("Simulador de Plataforma de Petróleo (Qt)");
-        setMinimumSize(1200, 800);
+        setMinimumSize(1400, 900);
 
-        QWidget* centralWidget = new QWidget(this);
-        setCentralWidget(centralWidget);
+        // Widget principal com scroll
+        QScrollArea* scrollArea = new QScrollArea(this);
+        QWidget* centralWidget = new QWidget();
+        scrollArea->setWidget(centralWidget);
+        scrollArea->setWidgetResizable(true);
+        setCentralWidget(scrollArea);
+        
+        // Tema visual melhorado com fundo preto
+        setStyleSheet(
+            "QMainWindow { background-color: #000000; }"
+            "QScrollArea { background-color: #000000; border: none; }"
+            "QWidget { background-color: #000000; color: #FFFFFF; }"
+            "QGroupBox { "
+                "background-color: #1a1a1a; "
+                "border: 2px solid #333333; "
+                "border-radius: 8px; "
+                "margin-top: 8px; "
+                "padding-top: 10px; "
+                "font-weight: bold; "
+            "}"
+            "QGroupBox::title { "
+                "subcontrol-origin: margin; "
+                "subcontrol-position: top center; "
+                "padding: 0 8px; "
+                "color: #00AAFF; "
+            "}"
+            "QPushButton { "
+                "background-color: #2d2d2d; "
+                "border: 2px solid #555555; "
+                "border-radius: 6px; "
+                "padding: 8px; "
+                "font-weight: bold; "
+                "min-height: 25px; "
+            "}"
+            "QPushButton:hover { background-color: #404040; border-color: #777777; }"
+            "QPushButton:pressed { background-color: #1a1a1a; }"
+            "QLineEdit { "
+                "background-color: #2d2d2d; "
+                "border: 2px solid #555555; "
+                "border-radius: 4px; "
+                "padding: 5px; "
+                "selection-background-color: #0078d4; "
+            "}"
+            "QLabel { color: #FFFFFF; }"
+            "QTextEdit { "
+                "background-color: #1a1a1a; "
+                "border: 2px solid #333333; "
+                "border-radius: 6px; "
+                "color: #CCCCCC; "
+            "}"
+        );
+        
         QVBoxLayout* mainLayout = new QVBoxLayout(centralWidget);
+        mainLayout->setSpacing(15);
+        mainLayout->setContentsMargins(20, 20, 20, 20);
 
-        // Seção de Ícones SCADA
-        QHBoxLayout* scadaIconsLayout = new QHBoxLayout();
+        // Seção de Ícones SCADA em GroupBox
+        QGroupBox* scadaGroupBox = new QGroupBox("Monitor SCADA - Status em Tempo Real");
+        QHBoxLayout* scadaIconsLayout = new QHBoxLayout(scadaGroupBox);
         scadaIconsLayout->setAlignment(Qt::AlignCenter);
+        scadaIconsLayout->setSpacing(30);
 
-        pressaoIconLabel = new QLabel("Pressão");
-        pressaoIconLabel->setToolTip("Status da Pressão do Reservatório");
-        pressaoIconLabel->setStyleSheet("color: #fff;");
-        scadaIconsLayout->addWidget(pressaoIconLabel);
+        // Criação dos ícones SCADA com estilo melhorado
+        auto createScadaIcon = [this, scadaIconsLayout](const QString& name, const QString& tooltip) -> QLabel* {
+            QVBoxLayout* iconLayout = new QVBoxLayout();
+            QLabel* iconLabel = new QLabel();
+            iconLabel->setFixedSize(60, 60);
+            iconLabel->setAlignment(Qt::AlignCenter);
+            iconLabel->setToolTip(tooltip);
+            
+            QLabel* textLabel = new QLabel(name);
+            textLabel->setAlignment(Qt::AlignCenter);
+            textLabel->setStyleSheet("color: #FFFFFF; font-weight: bold; font-size: 12px; margin-top: 5px;");
+            
+            QWidget* container = new QWidget();
+            QVBoxLayout* containerLayout = new QVBoxLayout(container);
+            containerLayout->addWidget(iconLabel);
+            containerLayout->addWidget(textLabel);
+            containerLayout->setSpacing(5);
+            containerLayout->setContentsMargins(10, 5, 10, 5);
+            
+            scadaIconsLayout->addWidget(container);
+            return iconLabel;
+        };
 
-        temperaturaIconLabel = new QLabel("Temperatura");
-        temperaturaIconLabel->setToolTip("Status da Temperatura do Reservatório");
-        temperaturaIconLabel->setStyleSheet("color: #fff;");
-        scadaIconsLayout->addWidget(temperaturaIconLabel);
+        pressaoIconLabel = createScadaIcon("Pressão", "Status da Pressão do Reservatório");
+        temperaturaIconLabel = createScadaIcon("Temperatura", "Status da Temperatura do Reservatório");  
+        vazaoIconLabel = createScadaIcon("Vazão", "Status da Vazão de Produção de Óleo");
+        gorIconLabel = createScadaIcon("GOR", "Status do Gás-Óleo Ratio");
+        statusIconLabel = createScadaIcon("Sistema", "Status Geral do Sistema");
 
-        vazaoIconLabel = new QLabel("Vazão");
-        vazaoIconLabel->setToolTip("Status da Vazão de Produção de Óleo");
-        vazaoIconLabel->setStyleSheet("color: #fff;");
-        scadaIconsLayout->addWidget(vazaoIconLabel);
+        mainLayout->addWidget(scadaGroupBox);
 
-        gorIconLabel = new QLabel("GOR");
-        gorIconLabel->setToolTip("Status do Gás-Óleo Ratio");
-        gorIconLabel->setStyleSheet("color: #fff;");
-        scadaIconsLayout->addWidget(gorIconLabel);
-
-        statusIconLabel = new QLabel("Sistema");
-        statusIconLabel->setToolTip("Status Geral do Sistema");
-        statusIconLabel->setStyleSheet("color: #fff;");
-        scadaIconsLayout->addWidget(statusIconLabel);
-
-        mainLayout->addLayout(scadaIconsLayout);
-
-        // Seção de Indicadores (removido 'Preço do Barril')
-        QHBoxLayout* indicatorsLayout = new QHBoxLayout();
+        // Seção de Indicadores Principais em Grid
+        QGroupBox* indicatorsGroupBox = new QGroupBox("Indicadores Operacionais");
+        QGridLayout* indicatorsLayout = new QGridLayout(indicatorsGroupBox);
+        indicatorsLayout->setSpacing(15);
+        
         QStringList titles = {"Produção de Petróleo", "Pressão do Reservatório", "Volume de Óleo", "Temperatura", "Viscosidade", "GOR", "WOR"};
-        for (const QString& title : titles) {
-            QVBoxLayout* boxLayout = new QVBoxLayout();
-            QLabel* titleLabel = new QLabel(title, this);
-            titleLabel->setStyleSheet("font-weight: bold; font-size: 16px;");
-            boxLayout->addWidget(titleLabel);
+        QStringList units = {"bopd", "psi", "bbl", "°C", "cp", "ratio", "ratio"};
+        
+        for (int i = 0; i < titles.size(); ++i) {
+            // Container para cada indicador
+            QFrame* indicatorFrame = new QFrame();
+            indicatorFrame->setFrameStyle(QFrame::Box | QFrame::Raised);
+            indicatorFrame->setLineWidth(1);
+            indicatorFrame->setStyleSheet(
+                "QFrame { "
+                    "background-color: #2a2a2a; "
+                    "border: 2px solid #444444; "
+                    "border-radius: 8px; "
+                    "padding: 10px; "
+                "}"
+            );
+            
+            QVBoxLayout* boxLayout = new QVBoxLayout(indicatorFrame);
+            boxLayout->setSpacing(5);
+            
+            QLabel* titleLabel = new QLabel(titles[i], this);
+            titleLabel->setAlignment(Qt::AlignCenter);
+            titleLabel->setStyleSheet("font-weight: bold; font-size: 12px; color: #CCCCCC; margin-bottom: 5px;");
+            titleLabel->setWordWrap(true);
+            
             QLabel* valueLabel = new QLabel("0", this);
-            valueLabel->setStyleSheet("font-size: 24px; font-weight: bold; color: yellow;");
+            valueLabel->setAlignment(Qt::AlignCenter);
+            valueLabel->setStyleSheet("font-size: 20px; font-weight: bold; color: #00FF00; min-height: 30px;");
             indicatorLabels.append(valueLabel);
+            
+            QLabel* unitLabel = new QLabel(units[i], this);
+            unitLabel->setAlignment(Qt::AlignCenter);
+            unitLabel->setStyleSheet("font-size: 10px; color: #888888; margin-top: 2px;");
+            
+            boxLayout->addWidget(titleLabel);
             boxLayout->addWidget(valueLabel);
-            indicatorsLayout->addLayout(boxLayout);
+            boxLayout->addWidget(unitLabel);
+            
+            // Posicionamento em grid (2 linhas)
+            int row = i < 4 ? 0 : 1;
+            int col = i < 4 ? i : i - 4;
+            indicatorsLayout->addWidget(indicatorFrame, row, col);
         }
-        mainLayout->addLayout(indicatorsLayout);
+        
+        mainLayout->addWidget(indicatorsGroupBox);
 
-        // Seção de Gráficos e Log
-        QHBoxLayout* chartsAndLogLayout = new QHBoxLayout();
-        QVBoxLayout* chartLayout = new QVBoxLayout();
+        // Seção de Monitoramento e Gráficos
+        QHBoxLayout* monitoringLayout = new QHBoxLayout();
+        
+        // Gráficos organizados em abas
+        QTabWidget* chartsTabWidget = new QTabWidget();
+        chartsTabWidget->setStyleSheet(
+            "QTabWidget::pane { border: 2px solid #333333; background-color: #1a1a1a; }"
+            "QTabBar::tab { "
+                "background-color: #2d2d2d; "
+                "border: 2px solid #555555; "
+                "padding: 8px 16px; "
+                "margin-right: 2px; "
+                "border-top-left-radius: 6px; "
+                "border-top-right-radius: 6px; "
+            "}"
+            "QTabBar::tab:selected { "
+                "background-color: #404040; "
+                "border-bottom-color: #1a1a1a; "
+            "}"
+            "QTabBar::tab:hover { background-color: #383838; }"
+        );
 
+        // Inicializar séries
         producaoSeries = new QLineSeries();
         producaoSeries->setName("Vazão de Óleo (bopd)");
         minProducaoSeries = new QLineSeries();
@@ -594,7 +710,7 @@ private:
         volumeOleoSeries->setName("Volume de Óleo (bbl)");
 
         temperaturaSeries = new QLineSeries();
-        temperaturaSeries->setName("Temperatura (C)");
+        temperaturaSeries->setName("Temperatura (°C)");
 
         viscosidadeSeries = new QLineSeries();
         viscosidadeSeries->setName("Viscosidade (cp)");
@@ -605,135 +721,234 @@ private:
         worSeries = new QLineSeries();
         worSeries->setName("WOR");
 
-        chartLayout->addWidget(createChart("Vazão de Óleo (Nível Operacional)", producaoSeries));
-        chartLayout->addWidget(createChart("Pressão do Reservatório (Nível Operacional)", pressaoSeries));
-        chartLayout->addWidget(createChart("Volume de Óleo (Nível Gerencial)", volumeOleoSeries));
-        chartLayout->addWidget(createChart("Temperatura (Nível Operacional)", temperaturaSeries));
-        chartLayout->addWidget(createChart("Viscosidade (Nível Operacional)", viscosidadeSeries));
-        chartLayout->addWidget(createChart("GOR e WOR (Nível Operacional)", gorSeries));
-        chartLayout->addWidget(createChart("", worSeries));
+        // Adicionar gráficos às abas
+        chartsTabWidget->addTab(createChart("Produção de Óleo", producaoSeries), "Produção");
+        chartsTabWidget->addTab(createChart("Pressão do Reservatório", pressaoSeries), "Pressão");
+        chartsTabWidget->addTab(createChart("Volume de Óleo", volumeOleoSeries), "Volume");
+        chartsTabWidget->addTab(createChart("Temperatura", temperaturaSeries), "Temperatura");
+        chartsTabWidget->addTab(createChart("Viscosidade", viscosidadeSeries), "Viscosidade");
+        
+        // Aba combinada para ratios
+        QWidget* ratiosWidget = new QWidget();
+        QVBoxLayout* ratiosLayout = new QVBoxLayout(ratiosWidget);
+        ratiosLayout->addWidget(createChart("GOR (Gas-Oil Ratio)", gorSeries));
+        ratiosLayout->addWidget(createChart("WOR (Water-Oil Ratio)", worSeries));
+        chartsTabWidget->addTab(ratiosWidget, "Ratios");
 
-        chartsAndLogLayout->addLayout(chartLayout, 2);
+        monitoringLayout->addWidget(chartsTabWidget, 3);
 
-        logTextEdit = new QTextEdit(this);
+        // Log de eventos com título
+        QGroupBox* logGroupBox = new QGroupBox("Log de Eventos do Sistema");
+        QVBoxLayout* logLayout = new QVBoxLayout(logGroupBox);
+        
+        logTextEdit = new QTextEdit();
         logTextEdit->setReadOnly(true);
-        logTextEdit->setStyleSheet("background-color: #333; color: #ccc;");
-        chartsAndLogLayout->addWidget(logTextEdit, 1);
+        logTextEdit->setMinimumHeight(300);
+        logTextEdit->setStyleSheet(
+            "QTextEdit { "
+                "background-color: #0a0a0a; "
+                "border: 1px solid #333333; "
+                "color: #CCCCCC; "
+                "font-family: 'Courier New', monospace; "
+                "font-size: 11px; "
+            "}"
+        );
+        logLayout->addWidget(logTextEdit);
+        
+        monitoringLayout->addWidget(logGroupBox, 1);
+        
+        mainLayout->addLayout(monitoringLayout);
 
-        mainLayout->addLayout(chartsAndLogLayout);
-
-        // Seção de Análise e Controles
+        // Seção de Controles Operacionais
         QHBoxLayout* controlsLayout = new QHBoxLayout();
-        QVBoxLayout* interventionLayout = new QVBoxLayout();
+        
+        // Controles de Intervenção em grid
+        QGroupBox* interventionGroupBox = new QGroupBox("Controles de Intervenção");
+        QGridLayout* interventionGrid = new QGridLayout(interventionGroupBox);
+        interventionGrid->setSpacing(10);
 
-        // Controles de Injeção
-        QGroupBox* injectionGroupBox = new QGroupBox("Controles de Intervenção", this);
-        QVBoxLayout* injectionLayout = new QVBoxLayout(injectionGroupBox);
-
-        // Injeção de Água
-        QHBoxLayout* waterLayout = new QHBoxLayout();
-        QLabel* waterLabel = new QLabel("Volume Água (bbl):");
-        suggestInputWater = new QLineEdit("1000");
-        suggestInputWater->setValidator(new QDoubleValidator(this));
-        QLabel* tempLabel = new QLabel("Temp (°C):");
-        inputTempAgua = new QLineEdit("100");
-        inputTempAgua->setValidator(new QDoubleValidator(this));
-        QPushButton* waterBtn = new QPushButton("Injetar Água");
+        // Helper function para criar controle de intervenção
+        auto createInterventionControl = [this](const QString& title, const QString& param1Label, 
+                                              const QString& param1Default, const QString& param2Label = "",
+                                              const QString& param2Default = "") -> QWidget* {
+            QFrame* frame = new QFrame();
+            frame->setFrameStyle(QFrame::StyledPanel);
+            frame->setStyleSheet(
+                "QFrame { "
+                    "background-color: #252525; "
+                    "border: 1px solid #444444; "
+                    "border-radius: 6px; "
+                    "padding: 8px; "
+                "}"
+            );
+            
+            QVBoxLayout* frameLayout = new QVBoxLayout(frame);
+            frameLayout->setSpacing(8);
+            
+            // Título
+            QLabel* titleLabel = new QLabel(title);
+            titleLabel->setStyleSheet("font-weight: bold; color: #00AAFF; font-size: 12px;");
+            titleLabel->setAlignment(Qt::AlignCenter);
+            frameLayout->addWidget(titleLabel);
+            
+            // Parâmetros
+            QGridLayout* paramsLayout = new QGridLayout();
+            paramsLayout->setSpacing(5);
+            
+            QLabel* label1 = new QLabel(param1Label);
+            label1->setStyleSheet("font-size: 10px; color: #CCCCCC;");
+            QLineEdit* input1 = new QLineEdit(param1Default);
+            input1->setValidator(new QDoubleValidator(this));
+            input1->setFixedWidth(80);
+            
+            paramsLayout->addWidget(label1, 0, 0);
+            paramsLayout->addWidget(input1, 0, 1);
+            
+            QLineEdit* input2 = nullptr;
+            if (!param2Label.isEmpty()) {
+                QLabel* label2 = new QLabel(param2Label);
+                label2->setStyleSheet("font-size: 10px; color: #CCCCCC;");
+                input2 = new QLineEdit(param2Default);
+                input2->setValidator(new QDoubleValidator(this));
+                input2->setFixedWidth(80);
+                
+                paramsLayout->addWidget(label2, 1, 0);
+                paramsLayout->addWidget(input2, 1, 1);
+            }
+            
+            frameLayout->addLayout(paramsLayout);
+            
+            // Botão de ação
+            QPushButton* actionBtn = new QPushButton("Executar");
+            actionBtn->setStyleSheet(
+                "QPushButton { "
+                    "background-color: #0078D4; "
+                    "border: none; "
+                    "color: white; "
+                    "font-weight: bold; "
+                    "padding: 6px; "
+                    "border-radius: 4px; "
+                "}"
+                "QPushButton:hover { background-color: #106EBE; }"
+                "QPushButton:pressed { background-color: #005A9E; }"
+            );
+            
+            frameLayout->addWidget(actionBtn);
+            
+            // Armazenar referências dos inputs
+            frame->setProperty("input1", QVariant::fromValue((QObject*)input1));
+            if (input2) frame->setProperty("input2", QVariant::fromValue((QObject*)input2));
+            frame->setProperty("button", QVariant::fromValue((QObject*)actionBtn));
+            
+            return frame;
+        };
+        
+        // Criar controles de intervenção
+        QWidget* waterControl = createInterventionControl("Injeção de Água", "Volume (bbl)", "1000", "Temp (°C)", "100");
+        QWidget* gasControl = createInterventionControl("Injeção de Gás", "Volume (m³)", "5000", "Densidade", "0.7");
+        QWidget* vaporControl = createInterventionControl("Injeção de Vapor", "Tempo (s)", "500");
+        QWidget* flareControl = createInterventionControl("Sistema Flare", "Vazão (scfd)", "5000");
+        
+        // Posicionar controles em grid 2x2
+        interventionGrid->addWidget(waterControl, 0, 0);
+        interventionGrid->addWidget(gasControl, 0, 1);
+        interventionGrid->addWidget(vaporControl, 1, 0);
+        interventionGrid->addWidget(flareControl, 1, 1);
+        
+        // Recuperar referências dos inputs
+        suggestInputWater = qobject_cast<QLineEdit*>(waterControl->property("input1").value<QObject*>());
+        inputTempAgua = qobject_cast<QLineEdit*>(waterControl->property("input2").value<QObject*>());
+        QPushButton* waterBtn = qobject_cast<QPushButton*>(waterControl->property("button").value<QObject*>());
         waterBtn->setObjectName("inj_agua_btn");
-        waterLayout->addWidget(waterLabel);
-        waterLayout->addWidget(suggestInputWater);
-        waterLayout->addWidget(tempLabel);
-        waterLayout->addWidget(inputTempAgua);
-        waterLayout->addWidget(waterBtn);
-        injectionLayout->addLayout(waterLayout);
-
-        // Injeção de Gás
-        QHBoxLayout* gasLayout = new QHBoxLayout();
-        QLabel* gasLabel = new QLabel("Volume Gás (m³):");
-        suggestInputGas = new QLineEdit("5000");
-        suggestInputGas->setValidator(new QDoubleValidator(this));
-        QLabel* densidadeLabel = new QLabel("Densidade:");
-        inputDensidadeGas = new QLineEdit("0.7");
-        inputDensidadeGas->setValidator(new QDoubleValidator(this));
-        QPushButton* gasBtn = new QPushButton("Injetar Gás");
+        
+        suggestInputGas = qobject_cast<QLineEdit*>(gasControl->property("input1").value<QObject*>());
+        inputDensidadeGas = qobject_cast<QLineEdit*>(gasControl->property("input2").value<QObject*>());
+        QPushButton* gasBtn = qobject_cast<QPushButton*>(gasControl->property("button").value<QObject*>());
         gasBtn->setObjectName("inj_gas_btn");
-        gasLayout->addWidget(gasLabel);
-        gasLayout->addWidget(suggestInputGas);
-        gasLayout->addWidget(densidadeLabel);
-        gasLayout->addWidget(inputDensidadeGas);
-        gasLayout->addWidget(gasBtn);
-        injectionLayout->addLayout(gasLayout);
-
-        // Injeção de Vapor
-        QHBoxLayout* vaporLayout = new QHBoxLayout();
-        QLabel* vaporLabel = new QLabel("Tempo Vapor (s):");
-        suggestInputVapor = new QLineEdit("500");
-        suggestInputVapor->setValidator(new QDoubleValidator(this));
-        QPushButton* vaporBtn = new QPushButton("Injetar Vapor");
+        
+        suggestInputVapor = qobject_cast<QLineEdit*>(vaporControl->property("input1").value<QObject*>());
+        QPushButton* vaporBtn = qobject_cast<QPushButton*>(vaporControl->property("button").value<QObject*>());
         vaporBtn->setObjectName("inj_vapor_btn");
-        vaporLayout->addWidget(vaporLabel);
-        vaporLayout->addWidget(suggestInputVapor);
-        vaporLayout->addWidget(vaporBtn);
-        injectionLayout->addLayout(vaporLayout);
-
-        // Flare
-        QHBoxLayout* flareLayout = new QHBoxLayout();
-        QLabel* flareLabel = new QLabel("Vazão Flare (scfd):");
-        suggestInputFlare = new QLineEdit("5000");
-        suggestInputFlare->setValidator(new QDoubleValidator(this));
-        QPushButton* flareBtn = new QPushButton("Acionar Flare");
+        
+        suggestInputFlare = qobject_cast<QLineEdit*>(flareControl->property("input1").value<QObject*>());
+        QPushButton* flareBtn = qobject_cast<QPushButton*>(flareControl->property("button").value<QObject*>());
         flareBtn->setObjectName("flare_btn");
-        flareLayout->addWidget(flareLabel);
-        flareLayout->addWidget(suggestInputFlare);
-        flareLayout->addWidget(flareBtn);
-        injectionLayout->addLayout(flareLayout);
 
-        // Botões de Produção
-        QGroupBox* productionGroupBox = new QGroupBox("Controles de Produção", this);
+        controlsLayout->addWidget(interventionGroupBox, 2);
+        
+        // Coluna direita com controles de produção e sistema
+        QVBoxLayout* rightControlsLayout = new QVBoxLayout();
+        
+        // Controles de Produção
+        QGroupBox* productionGroupBox = new QGroupBox("Controles de Produção");
         QVBoxLayout* productionLayout = new QVBoxLayout(productionGroupBox);
-        QHBoxLayout* productionButtonsLayout = new QHBoxLayout();
-        QPushButton* startBtn = new QPushButton("Iniciar Produção");
-        startBtn->setObjectName("iniciar_prod_btn");
-        QPushButton* stopBtn = new QPushButton("Parar Produção");
-        stopBtn->setObjectName("parar_prod_btn");
-        productionButtonsLayout->addWidget(startBtn);
-        productionButtonsLayout->addWidget(stopBtn);
-        productionLayout->addLayout(productionButtonsLayout);
-
-        // Botões de Válvula
-        QHBoxLayout* valveButtonsLayout = new QHBoxLayout();
-        QPushButton* openValveBtn = new QPushButton("Abrir Válvula");
-        openValveBtn->setObjectName("abrir_valv_btn");
-        QPushButton* closeValveBtn = new QPushButton("Fechar Válvula");
-        closeValveBtn->setObjectName("fechar_valv_btn");
-        valveButtonsLayout->addWidget(openValveBtn);
-        valveButtonsLayout->addWidget(closeValveBtn);
-        productionLayout->addLayout(valveButtonsLayout);
-
-        interventionLayout->addWidget(injectionGroupBox);
-        interventionLayout->addWidget(productionGroupBox);
-
-        // Seção de Sugestões
-        QGroupBox* suggestionGroupBox = new QGroupBox("Sugestões do Sistema", this);
+        
+        // Botões de produção com estilo
+        auto createProductionButton = [](const QString& text, const QString& objName, const QString& color) -> QPushButton* {
+            QPushButton* btn = new QPushButton(text);
+            btn->setObjectName(objName);
+            btn->setMinimumHeight(40);
+            btn->setStyleSheet(QString(
+                "QPushButton { "
+                    "background-color: %1; "
+                    "border: none; "
+                    "color: white; "
+                    "font-weight: bold; "
+                    "border-radius: 6px; "
+                    "font-size: 12px; "
+                "}"
+                "QPushButton:hover { background-color: %2; }"
+                "QPushButton:pressed { background-color: %3; }"
+            ).arg(color).arg(color + "CC").arg(color + "AA"));
+            return btn;
+        };
+        
+        QPushButton* startBtn = createProductionButton("▶ Iniciar Produção", "iniciar_prod_btn", "#28A745");
+        QPushButton* stopBtn = createProductionButton("⏸ Parar Produção", "parar_prod_btn", "#DC3545");
+        QPushButton* openValveBtn = createProductionButton("⬆ Abrir Válvula", "abrir_valv_btn", "#17A2B8");
+        QPushButton* closeValveBtn = createProductionButton("⬇ Fechar Válvula", "fechar_valv_btn", "#FD7E14");
+        
+        productionLayout->addWidget(startBtn);
+        productionLayout->addWidget(stopBtn);
+        productionLayout->addWidget(openValveBtn);
+        productionLayout->addWidget(closeValveBtn);
+        
+        rightControlsLayout->addWidget(productionGroupBox);
+        
+        // Sugestões do Sistema
+        QGroupBox* suggestionGroupBox = new QGroupBox("Sugestões Inteligentes");
         QVBoxLayout* suggestionLayout = new QVBoxLayout(suggestionGroupBox);
-        suggestionExplanationLabel = new QLabel("O sistema fornecerá sugestões de intervenção aqui.");
-        suggestionExplanationLabel->setStyleSheet("font-style: italic; color: #777;");
+        
+        suggestionExplanationLabel = new QLabel("🤖 O sistema fornecerá sugestões automáticas baseadas nas condições operacionais.");
+        suggestionExplanationLabel->setStyleSheet(
+            "color: #CCCCCC; "
+            "font-style: italic; "
+            "padding: 10px; "
+            "background-color: #1a1a1a; "
+            "border: 1px solid #333333; "
+            "border-radius: 4px; "
+            "font-size: 11px; "
+        );
         suggestionExplanationLabel->setWordWrap(true);
+        suggestionExplanationLabel->setMinimumHeight(80);
+        
         suggestionLayout->addWidget(suggestionExplanationLabel);
-
-        interventionLayout->addWidget(suggestionGroupBox);
-
-        // Botões de Relatório
-        QPushButton* reportBtn = new QPushButton("Gerar Relatórios");
-        reportBtn->setObjectName("report_btn");
-        QPushButton* downloadBtn = new QPushButton("Baixar CSV");
-        downloadBtn->setObjectName("download_csv_btn");
-        QHBoxLayout* reportButtonsLayout = new QHBoxLayout();
-        reportButtonsLayout->addWidget(reportBtn);
-        reportButtonsLayout->addWidget(downloadBtn);
-        interventionLayout->addLayout(reportButtonsLayout);
-
-        controlsLayout->addLayout(interventionLayout);
+        rightControlsLayout->addWidget(suggestionGroupBox);
+        
+        // Botões de Sistema
+        QGroupBox* systemGroupBox = new QGroupBox("Sistema e Relatórios");
+        QVBoxLayout* systemLayout = new QVBoxLayout(systemGroupBox);
+        
+        QPushButton* reportBtn = createProductionButton("📊 Gerar Relatórios", "report_btn", "#6F42C1");
+        QPushButton* downloadBtn = createProductionButton("💾 Exportar CSV", "download_csv_btn", "#20C997");
+        
+        systemLayout->addWidget(reportBtn);
+        systemLayout->addWidget(downloadBtn);
+        
+        rightControlsLayout->addWidget(systemGroupBox);
+        rightControlsLayout->addStretch(); // Espaço flexível no final
+        
+        controlsLayout->addLayout(rightControlsLayout, 1);
         mainLayout->addLayout(controlsLayout);
 
         // Conecta os botões aos slots
