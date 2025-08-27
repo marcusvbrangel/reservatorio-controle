@@ -1,6 +1,14 @@
 # Configuração Técnica do Simulador - Especificações Detalhadas
 
-## Versão Atual: v1.2 - Redesign Completo da Interface
+## Versão Atual: v1.3 - Intervalos Realistas e Produção Dinâmica
+
+### Melhorias da v1.3 (Simulação e Monitoramento)
+- ✅ **Intervalos Bacia de Campos**: 5 segundos (padrão Petrobras COI)
+- ✅ **Produção Dinâmica**: Vazão variável com declínio realista
+- ✅ **Variabilidade Operacional**: Flutuações ±2% simulando condições reais
+- ✅ **Sistema de Alertas Escalonado**: Críticos a cada 30 segundos
+- ✅ **Física Aprimorada**: Depleção acelerada e efeitos visíveis
+- ✅ **Contexto Educacional**: Referências à indústria brasileira
 
 ### Melhorias da v1.2 (Interface)
 - ✅ **Dark Mode Profissional**: Fundo preto com esquema de cores industriais

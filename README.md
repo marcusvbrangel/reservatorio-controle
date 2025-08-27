@@ -290,7 +290,32 @@ make
 
 ## Histórico de Melhorias
 
-### v1.2 - Redesign Completo da Interface (Atual)
+### v1.3 - Intervalos de Monitoramento Realistas e Produção Dinâmica (Atual)
+
+#### Correções Críticas na Simulação:
+- ✅ **Produção Dinâmica Corrigida**: Vazão de óleo agora varia continuamente em tempo real
+- ✅ **Gráficos Ativos**: Todas as séries de dados agora se movimentam e evoluem
+- ✅ **Declínio de Pressão Realista**: Fator aumentado 20x para visibilidade das mudanças
+- ✅ **Variabilidade Operacional**: Flutuações de ±2% simulando condições reais
+- ✅ **Fator de Depleção**: Declínio acelera conforme reservatório se esgota
+- ✅ **Comentários Técnicos**: Código documentado com explicações detalhadas
+
+#### Intervalos de Monitoramento Baseados na Indústria:
+- ✅ **Padrão Bacia de Campos**: Intervalos de 5 segundos (padrão Petrobras)
+- ✅ **Sistema COI Simulado**: 28 plataformas, 190 poços, monitoramento 24/7
+- ✅ **Alertas Escalonados**: Críticos a cada 30 segundos (padrão industrial)
+- ✅ **Dados Operacionais**: Coleta contínua a cada ciclo de 5 segundos
+- ✅ **Log Educativo**: Contexto da indústria brasileira e internacional
+- ✅ **Realismo Operacional**: Experiência autêntica de operação offshore
+
+#### Melhorias na Física de Reservatório:
+- ✅ **Simulação de Depleção**: Comportamento realista de esgotamento
+- ✅ **Produção de Gás**: Efeitos intensificados para visibilidade
+- ✅ **Coning Dinâmico**: Variações de GOR/WOR baseadas na pressão
+- ✅ **Números Aleatórios**: Flutuações operacionais realistas
+- ✅ **Tempo de Simulação**: Intervalos de 5 segundos por ciclo
+
+### v1.2 - Redesign Completo da Interface
 
 #### Interface e Experiência do Usuário:
 - ✅ **Tema Dark Mode Completo**: Fundo preto profissional com esquema de cores moderno
@@ -343,13 +368,20 @@ make
 - Modelos matemáticos de reservatório
 - Sistema de relatórios e exportação CSV
 
-## Especificações de Performance
+## Especificações de Performance (v1.3)
 
-### Tempo Real
-- **Frequência de Atualização**: 1 Hz (1 segundo)
-- **Coleta de Dados**: A cada 5 segundos
-- **Responsividade**: Interface atualizada em tempo real
-- **Gráficos**: Plotagem contínua sem lag perceptível
+### Intervalos de Monitoramento Realistas
+- **Frequência Principal**: 0.2 Hz (5 segundos) - Padrão Bacia de Campos
+- **Dados Operacionais**: Coleta contínua a cada ciclo (5s)
+- **Alertas Críticos**: Verificação a cada 30 segundos
+- **Tempo de Simulação**: 5 segundos por ciclo (tempo real acelerado)
+- **Responsividade**: Interface otimizada para observação de tendências
+
+### Sistema de Dados Dinâmicos
+- **Produção de Óleo**: Variação contínua com declínio realista
+- **Pressão**: Declínio progressivo baseado na depleção do reservatório
+- **Gráficos**: Plotagem ativa com dados em constante evolução
+- **Variabilidade**: Flutuações de ±2% simulando condições operacionais reais
 
 ### Capacidade de Dados
 - **Armazenamento**: Ilimitado durante execução

@@ -50,6 +50,8 @@
 #include <QFrame>
 #include <cmath>
 #include <algorithm>
+#include <cstdlib>
+#include <ctime>
 
 QT_CHARTS_USE_NAMESPACE
 
@@ -155,22 +157,49 @@ public:
             vazao_oleo_bopd = 0.0;
             return;
         }
+        
+        // Calcular nova vazão baseada nas condições atuais
         vazao_oleo_bopd = calcularVazaoProducao(pressao_psi);
+        
+        // Calcular produção em barris para este intervalo de tempo
         double oleo_produzido_bbl = vazao_oleo_bopd * (tempo_passado_s / 86400.0);
+        
+        // Reduzir volume de óleo no reservatório
         volume_oleo_bbl -= oleo_produzido_bbl;
         if (volume_oleo_bbl < 0) volume_oleo_bbl = 0;
-        pressao_psi -= 0.1 * oleo_produzido_bbl / 1000.0;
+        
+        // Declínio de pressão mais significativo e realista
+        // Fator aumentado de 0.1 para 2.0 para tornar o declínio visível
+        double declinio_pressao = 2.0 * oleo_produzido_bbl / 1000.0;
+        
+        // Adicionar variação baseada no volume restante do reservatório
+        double fator_depleção = 1.0 - (volume_oleo_bbl / 1000000.0); // 0 a 1
+        declinio_pressao *= (1.0 + fator_depleção); // Acelera declínio conforme esgota
+        
+        pressao_psi -= declinio_pressao;
         if (pressao_psi < 0) pressao_psi = 0;
+        
+        // Produção de gás livre quando pressão cai abaixo da pressão de bolha
         if (pressao_psi < pressao_de_bolha_psi) {
-            volume_gas_m3 += oleo_produzido_bbl * 100.0;
+            volume_gas_m3 += oleo_produzido_bbl * 150.0; // Aumentado para efeito visível
         }
+        
+        // Simular efeitos de coning (água e gás)
         simularConing();
+        
+        // Produção de água baseada no WOR
         double agua_produzida_bbl = oleo_produzido_bbl * water_oil_ratio;
-        volume_oleo_bbl -= agua_produzida_bbl;
         volume_agua_bbl -= agua_produzida_bbl;
-        if (volume_oleo_bbl < 0) volume_oleo_bbl = 0;
+        if (volume_agua_bbl < 0) volume_agua_bbl = 0;
+        
+        // Produção de gás baseada no GOR
         double gas_produzido_scfd = vazao_oleo_bopd * gas_oil_ratio;
         volume_gas_m3 += gas_produzido_scfd / 35.315 * (tempo_passado_s / 86400.0);
+        
+        // Pequenas flutuações aleatórias para simular condições reais
+        // Variação de ±2% na vazão para simular flutuações operacionais
+        double variacao = ((rand() % 41) - 20) / 1000.0; // -0.020 a +0.020
+        vazao_oleo_bopd *= (1.0 + variacao);
     }
 
     void simularConing() {
@@ -310,6 +339,9 @@ class SimuladorWindow : public QMainWindow {
 
 public:
     SimuladorWindow(QWidget *parent = nullptr) : QMainWindow(parent) {
+        // Inicializa gerador de números aleatórios
+        srand(static_cast<unsigned int>(time(nullptr)));
+        
         // Inicializa o reservatório e o temporizador
         reservatorio = new Reservatorio();
         simulationTimer = new QTimer(this);
@@ -321,8 +353,12 @@ public:
 
         // Inicia a simulação após a interface estar pronta
         QTimer::singleShot(100, this, [this]() {
-            simulationTimer->start(1000); // 1 segundo
-            logMessage("Simulação de plataforma de petróleo iniciada.");
+            // Intervalo realista: 5 segundos (similar à Bacia de Campos)
+            simulationTimer->start(5000); // 5 segundos - realismo operacional
+            logMessage("Simulação iniciada - Monitoramento a cada 5 segundos (padrão Bacia de Campos).");
+            logMessage("ℹ️ Sistema configurado com intervalos realistas da indústria de petróleo:", "info");
+            logMessage("• Dados operacionais: 5s (Pressão, Temperatura, Vazão)", "info");
+            logMessage("• Alertas críticos: 30s • Relatórios: Disponíveis sob demanda", "info");
         });
     }
 
@@ -344,17 +380,17 @@ private slots:
         }
 
         if (isProducing) {
-            reservatorio->atualizarEstado(1.0);
+            // Simular 5 segundos de operação real a cada ciclo
+            reservatorio->atualizarEstado(5.0);
         } else {
-            // Remove a chamada para simularPrecoPetroleo()
+            // Mesmo sem produção, o tempo avança
             reservatorio->verificarEmergencia();
-            reservatorio->tempo_simulacao_s += 1.0;
+            reservatorio->tempo_simulacao_s += 5.0;
         }
 
-        // Salvar dados a cada 5 segundos para um log mais detalhado
-        if (static_cast<int>(reservatorio->tempo_simulacao_s) % 5 == 0) {
-            saveDataPoint();
-        }
+        // Salvar dados a cada ciclo (representa coleta de dados operacionais)
+        // Em um sistema real, isso seria equivalent a dados coletados a cada 5 segundos
+        saveDataPoint();
 
         // Verificar e exibir alertas e sugestões
         if (reservatorio->em_emergencia) {
@@ -368,10 +404,15 @@ private slots:
             suggestionExplanationLabel->setText("O sistema está em estado de emergência e todas as ações foram bloqueadas por segurança. A produção foi interrompida.");
         } else {
             suggestInterventions();
-            if (reservatorio->pressao_psi < 2500) {
-                logMessage("AVISO: Pressão do reservatório em declínio. Injeção de água ou gás pode ser necessária.", "alerta");
-            } else if (reservatorio->viscosidade_oleo_cp > 4.0) {
-                logMessage("AVISO: Viscosidade do óleo alta. Injeção de vapor ou água quente pode ser necessária.", "alerta");
+            
+            // Alertas com frequência controlada (como sistemas reais)
+            // Verifica alertas críticos a cada 30 segundos (6 ciclos)
+            if (static_cast<int>(reservatorio->tempo_simulacao_s) % 30 == 0) {
+                if (reservatorio->pressao_psi < 2500) {
+                    logMessage("AVISO: Pressão do reservatório em declínio. Injeção de água ou gás pode ser necessária.", "alerta");
+                } else if (reservatorio->viscosidade_oleo_cp > 4.0) {
+                    logMessage("AVISO: Viscosidade do óleo alta. Injeção de vapor ou água quente pode ser necessária.", "alerta");
+                }
             }
         }
         updateUI();
