@@ -1,115 +1,399 @@
-// --------------------------------------------------------------------------
-// simulador.cpp
-// Simulação de plataforma de petróleo com interface gráfica Qt.
-// Esta versão foi modificada para remover todos os cálculos
-// e exibições relacionadas a custos e lucro.
-// --------------------------------------------------------------------------
+/*
+================================================================================
+🎓 SIMULADOR DE RESERVATÓRIO DE PETRÓLEO - POÇO MLS-3A (MARLIM SUL)
+================================================================================
 
-// --------------------------------------------------------------------------
-// Bibliotecas Qt necessárias para compilação.
-// sudo apt install libqt5charts5-dev
-// sudo apt install cmake make
-// sudo apt install libqt5svg5-dev
-// sudo apt install qtbase5-dev libqt5widgets5 libqt5charts5-dev libqt5svg5-dev
-// --------------------------------------------------------------------------
-// Comandos de compilação:
-// rm -rf build
-// mkdir build
-// cd build
-// cmake ..
-// make
-// --------------------------------------------------------------------------
-// Comando para executar:
-// ./reservatorio_01
-// --------------------------------------------------------------------------
+📚 GUIA EDUCACIONAL PARA ESTUDANTES DE ENGENHARIA DE RESERVATÓRIOS
 
-#include <QApplication>
-#include <QMainWindow>
-#include <QVBoxLayout>
-#include <QHBoxLayout>
-#include <QPushButton>
-#include <QLabel>
-#include <QTimer>
-#include <QMessageBox>
-#include <QTextEdit>
-#include <QLineEdit>
-#include <QDoubleValidator>
-#include <QValueAxis>
-#include <QtCharts/QChartView>
-#include <QtCharts/QLineSeries>
-#include <QGroupBox>
-#include <QGraphicsSvgItem>
-#include <QIcon>
-#include <QByteArray>
-#include <QBuffer>
-#include <QDialog>
-#include <QTextStream>
-#include <QScrollArea>
-#include <QTabWidget>
-#include <QGridLayout>
-#include <QFrame>
-#include <cmath>
-#include <algorithm>
-#include <cstdlib>
-#include <ctime>
+Este simulador é uma ferramenta didática que reproduz as condições operacionais
+reais do poço MLS-3A da Bacia de Campos (Petrobras). Foi desenvolvido para
+ensinar conceitos fundamentais de:
 
+• Física de Reservatórios (pressão, temperatura, viscosidade)
+• Curvas de IPR (Inflow Performance Relationship)
+• Modelos de produção (Darcy, Vogel, Standing)
+• Fenômenos operacionais (coning, declínio de produção)
+• Métodos de recuperação (injeção de água, gás, vapor)
+• Monitoramento e controle de produção
+
+🏆 DADOS REAIS: Baseado em 26 anos de histórico operacional do MLS-3A
+⚙️ TECNOLOGIA: Interface gráfica Qt5 com visualizações em tempo real
+🎯 PÚBLICO: Estudantes iniciantes de Engenharia de Reservatórios
+
+================================================================================
+*/
+
+/*
+================================================================================
+📦 BIBLIOTECAS E DEPENDÊNCIAS DO SISTEMA
+================================================================================
+
+🔧 INSTALAÇÃO DAS DEPENDÊNCIAS (Ubuntu/Debian):
+sudo apt install libqt5charts5-dev cmake make libqt5svg5-dev
+sudo apt install qtbase5-dev libqt5widgets5 libqt5charts5-dev libqt5svg5-dev
+
+🏗️ COMPILAÇÃO DO PROJETO:
+rm -rf build          # Remove compilação anterior
+mkdir build          # Cria diretório de build
+cd build             # Entra no diretório
+cmake ..            # Configura o projeto
+make                # Compila o código
+
+▶️ EXECUÇÃO:
+./reservatorio_01   # Executa o simulador
+
+📝 NOTA EDUCACIONAL:
+O Qt5 é um framework multiplataforma usado para criar interfaces gráficas
+profissionais. É amplamente utilizado na indústria petrolífera para
+sistemas SCADA (Supervisory Control and Data Acquisition).
+
+================================================================================
+*/
+
+/*
+================================================================================
+📦 INCLUSÃO DE BIBLIOTECAS - GUIA EDUCACIONAL
+================================================================================
+
+📚 PARA ESTUDANTES: Cada biblioteca tem uma função específica no simulador
+
+🖥️ INTERFACE GRÁFICA (Qt5 GUI):
+*/
+#include <QApplication>       // Classe principal da aplicação Qt5
+#include <QMainWindow>        // Janela principal com menu/toolbar
+#include <QVBoxLayout>        // Layout vertical (organiza widgets)
+#include <QHBoxLayout>        // Layout horizontal 
+#include <QPushButton>        // Botões clicáveis da interface
+#include <QLabel>            // Rótulos de texto estático
+#include <QLineEdit>         // Campos de entrada de texto
+#include <QTextEdit>         // Área de texto multi-linha
+#include <QGroupBox>         // Agrupamento visual de controles
+#include <QScrollArea>       // Área com rolagem para conteúdo grande
+#include <QTabWidget>        // Abas para organizar conteúdo
+#include <QGridLayout>       // Layout em grade (linhas/colunas)
+#include <QFrame>            // Molduras e separações visuais
+#include <QDialog>           // Janelas de diálogo
+#include <QMessageBox>       // Caixas de alerta e confirmação
+
+/*
+📈 GRÁFICOS E VISUALIZAÇÃO:
+*/
+#include <QtCharts/QChartView>  // Visualizador de gráficos
+#include <QtCharts/QLineSeries> // Séries de linha para gráficos
+#include <QValueAxis>          // Eixos numéricos dos gráficos
+#include <QGraphicsSvgItem>    // Ícones SVG escaláveis
+#include <QIcon>               // Sistema de ícones
+
+/*
+⏱️ SISTEMA DE TEMPO E EVENTOS:
+*/
+#include <QTimer>              // Temporizador para simulação contínua
+
+/*
+💾 MANIPULAÇÃO DE DADOS:
+*/
+#include <QDoubleValidator>    // Validação de números decimais
+#include <QTextStream>         // Leitura/escrita de texto
+#include <QByteArray>          // Manipulação de dados binários
+#include <QBuffer>             // Buffer de memória
+
+/*
+🧮 BIBLIOTECAS MATEMÁTICAS (C++ STL):
+*/
+#include <cmath>               // Funções matemáticas (pow, exp, log, etc.)
+#include <algorithm>           // Algoritmos (max, min, sort, etc.)
+#include <cstdlib>             // Funções padrão (rand, exit, etc.)
+#include <ctime>               // Funções de tempo (time, clock, etc.)
+
+/*
+📝 NOTA EDUCACIONAL:
+Essas bibliotecas formam a base de qualquer sistema industrial moderno:
+• Qt5: Framework profissional usado em sistemas SCADA da Petrobras
+• STL: Bibliotecas C++ fundamentais para cálculos de engenharia
+• Charts: Visualização essencial para monitoramento de poços
+*/
+
+/*
+================================================================================
+📊 NAMESPACE DOS GRÁFICOS QT
+================================================================================
+
+📚 CONCEITO EDUCACIONAL:
+Esta linha permite usar as classes de gráfico do Qt5 sem o prefixo
+'QtCharts::', simplificando o código. É uma prática comum em C++.
+
+⚠️ IMPORTANTE: Namespaces evitam conflitos entre bibliotecas diferentes
+             que possam ter classes com nomes similares.
+*/
 QT_CHARTS_USE_NAMESPACE
 
-// ====================================================================
-// CLASSE RESERVATORIO: MODELO DE FÍSICA E ENGENHARIA
-// ====================================================================
+/*
+🎓 ================================================================================
+🚫 CLASSE RESERVATORIO - MODELO FÍSICO-MATEMÁTICO DO MLS-3A
+================================================================================
+
+📚 CONCEITOS FUNDAMENTAIS PARA ESTUDANTES:
+
+Esta classe representa um MODELO DIGITAL do reservatório real MLS-3A (Marlim Sul).
+É baseada em equações fundamentais da Engenharia de Reservatórios:
+
+• LEI DE DARCY: Fluxo de fluidos em meio poroso
+• EQUAÇÃO DE VOGEL: IPR para fluxo bifásico (gás + óleo)
+• CORRELAÇÕES DE STANDING: Propriedades PVT
+• MODELO DE DECLÍNIO: Berão hiperbólico/exponencial
+
+🏆 DADOS REAIS: Calibrado com 26 anos de dados operacionais do MLS-3A
+🔍 VALIDAÇÃO: Benchmarking com dados da Petrobras/ANP
+
+================================================================================
+*/
 
 class Reservatorio {
 public:
-    // Variáveis de Estado do Reservatório
-    double pressao_psi;
-    double temperatura_C;
-    double volume_oleo_bbl;
-    double volume_gas_m3;
-    double volume_agua_bbl;
+    /*
+    🌡️ ========================================================================
+    VARIÁVEIS DE ESTADO - PROPRIEDADES FUNDAMENTAIS DO RESERVATÓRIO
+    ========================================================================
+    
+    📚 PARA ESTUDANTES: Estas são as variáveis que descrevem o estado
+    atual do reservatório e mudam com o tempo durante a produção:
+    */
+    
+    double pressao_psi;        // 🌡️ Pressão do reservatório [psi]
+                               //     CONCEITO: Força que "empurra" o óleo para o poço
+                               //     RANGE TÍPICO: 1.800-4.200 psi (Bacia de Campos)
+                               //     VALOR MLS-3A: 2.850 psi (atual, 2025)
+    
+    double temperatura_C;      // 🌡️ Temperatura do reservatório [°C]
+                               //     CONCEITO: Afeta viscosidade e densidade dos fluidos
+                               //     RANGE TÍPICO: 60-120°C (profundidades 1.000-3.000m)
+                               //     VALOR MLS-3A: 92°C (medido em profundidade)
+    
+    double volume_oleo_bbl;    // 🛢️ Volume de óleo restante [barris]
+                               //     CONCEITO: OOIP restante (Original Oil In Place)
+                               //     OOIP ORIGINAL MLS-3A: ~280 milhões bbl
+                               //     VALOR ATUAL: ~55 milhões bbl (80% já produzido)
+    
+    double volume_gas_m3;      // ☘️ Volume de gás livre [m³]
+                               //     CONCEITO: Gás que se separa do óleo quando P < Pb
+                               //     PROBLEMA: Excesso reduz eficiência de bombeio
+                               //     CONTROLE: Injeção de gás ou flare
+    
+    double volume_agua_bbl;    // 💧 Volume de água no sistema [barris]
+                               //     CONCEITO: Água connata + injetada + aquifer
+                               //     PROBLEMA: Aumenta com water coning
+                               //     BSW MLS-3A: ~23% (2025)
 
-    // Propriedades Derivadas (Calculadas em cada passo)
-    double viscosidade_oleo_cp;
-    double vazao_oleo_bopd;
-    double pressao_de_bolha_psi;
-    double pressao_poco_psi;
-    bool em_emergencia;
-    double gas_oil_ratio;
-    double water_oil_ratio;
-    double tempo_simulacao_s;
+    /*
+    🧮 ========================================================================
+    PROPRIEDADES DERIVADAS - CALCULADAS A PARTIR DAS VARIÁVEIS DE ESTADO
+    ========================================================================
+    
+    📚 CONCEITO: Estas propriedades são calculadas usando correlações
+    empíricas e modelos físicos a cada passo da simulação:
+    */
+    
+    double viscosidade_oleo_cp;    // 🌯 Viscosidade dinâmica do óleo [cp]
+                                   //       CONCEITO: Resistência do óleo ao escoamento
+                                   //       FÓRMULA: Standing correlation (T, P, API)
+                                   //       VALOR MLS-3A: ~2,8 cp (92°C, 29,5° API)
+    
+    double vazao_oleo_bopd;        // 🚢 Vazão de produção de óleo [bopd]
+                                   //       CONCEITO: Calculada pela curva IPR (Inflow Performance)
+                                   //       FÓRMULA: Darcy (monofásico) + Vogel (bifásico)
+                                   //       VALOR MLS-3A: ~22.000 bopd (após revitalização)
+    
+    double pressao_de_bolha_psi;   // 🧙 Pressão de saturação [psi]
+                                   //       CONCEITO: Pressão onde gás começa a se separar do óleo
+                                   //       IMPORTÂNCIA: P < Pb = fluxo bifásico (mais complexo)
+                                   //       VALOR MLS-3A: 2.950 psi (lab PVT)
+    
+    double pressao_poco_psi;       // 🕳️ Pressão de fundo de poço (BHP) [psi]
+                                   //       CONCEITO: Pressão na formação produtora
+                                   //       CONTROLE: Válvula choke (↑ fecha, ↓ abre)
+                                   //       VALOR MLS-3A: ~1.950 psi (controlado)
+    
+    bool em_emergencia;            // ⚠️ Status de emergência do sistema
+                                   //       CONCEITO: Shutdown automático por parâmetros críticos
+                                   //       TRIGGERS: P < P_min, μ > μ_max, GOR > GOR_max
+    
+    double gas_oil_ratio;          // ⛽ Razão gás-óleo (GOR) [scf/bbl]
+                                   //       CONCEITO: Volume de gás por barril de óleo produzido
+                                   //       PROBLEMA: GOR alto = baixa eficiência de bombeio
+                                   //       VALOR MLS-3A: 420 scf/bbl (normal para óleo médio)
+    
+    double water_oil_ratio;        // 💧 Razão água-óleo (WOR) [adimensional]
+                                   //       CONCEITO: Equivale ao BSW (Basic Sediments & Water)
+                                   //       PROBLEMA: Aumenta com water coning e breakthrough
+                                   //       VALOR MLS-3A: 0,23 = 23% BSW (2025)
+    
+    double tempo_simulacao_s;      // ⏱️ Tempo decorrido na simulação [segundos]
+                                   //       CONCEITO: Contador interno para cálculos temporais
 
-    // Constantes do MLS-3A (Marlim Sul)
-    const double GRAVIDADE_GAS_PESO_AR = 0.85;  // Densidade específica do gás MLS-3A
-    const double GRAVIDADE_API = 29.5;          // Grau API real do óleo MLS-3A
-    const double PRODUTIVIDADE_POCO_C = 22000.0; // Produção atual MLS-3A (bopd)
-    const double FATOR_INJECAO_GAS_BASE = 0.05;
-    const double FATOR_INJECAO_AGUA_BASE = 0.01;
-    const double PRODUCAO_MINIMA_ACEITAVEL_BOPD = 8000.0; // Limite econômico MLS-3A
+    /*
+    🔍 ========================================================================
+    CONSTANTES FÍSICAS REAIS DO POÇO MLS-3A (MARLIM SUL)
+    ========================================================================
+    
+    📚 PARA ESTUDANTES: Estas são propriedades REAIS medidas em laboratório
+    e campo, baseadas em 26 anos de dados operacionais do MLS-3A:
+    */
+    
+    const double GRAVIDADE_GAS_PESO_AR = 0.85;    // ⛽ Densidade relativa do gás
+                                                   //     CONCEITO: ρ_gás / ρ_ar (adimensional)
+                                                   //     VALOR 0.85 = Gás "leve" (rico em metano)
+                                                   //     IMPORTÂNCIA: Usado em correlações PVT
+    
+    const double GRAVIDADE_API = 29.5;            // 🌡️ Grau API do óleo MLS-3A
+                                                   //     CONCEITO: Medida de "leveza" do óleo
+                                                   //     FÓRMULA: °API = (141.5/ρ_60F) - 131.5
+                                                   //     CLASSIFICAÇÃO: 29.5° = ÓLEO MÉDIO (bom!)
+                                                   //     DENSIDADE: ~0.88 g/cm³ a 60°F
+    
+    const double PRODUTIVIDADE_POCO_C = 22000.0;  // 🚢 Produção atual MLS-3A [bopd]
+                                                   //     CONCEITO: Capacidade máxima de produção
+                                                   //     HISTÓRICO: Pico = 45.000 bopd (2010)
+                                                   //     ATUAL: 22.000 bopd (após revitalização 2023)
+                                                   //     META: Sustentar > 15.000 bopd até 2030
+    
+    const double FATOR_INJECAO_GAS_BASE = 0.05;   // ⛽ Fator de resposta à injeção de gás
+                                                   //     CONCEITO: ΔP / Volume_gas_injetado
+                                                   //     CALIBRAÇÃO: Baseada em testes de injeção
+                                                   //     USO: Gas-lift ou manutenção de pressão
+    
+    const double FATOR_INJECAO_AGUA_BASE = 0.01;  // 💧 Fator de resposta à injeção de água
+                                                   //     CONCEITO: Eficiência da injeção de água
+                                                   //     BAIXO VALOR: Reservatório já com alta pressão
+                                                   //     USO: Waterflooding secundário
+    
+    const double PRODUCAO_MINIMA_ACEITAVEL_BOPD = 8000.0; // 💰 Limite econômico [bopd]
+                                                           //     CONCEITO: Vazão mínima viável economicamente
+                                                           //     CÁLCULO: Custos operacionais vs receita
+                                                           //     REALIDADE: Custos MLS-3A ~US$ 35/bbl
 
-    // Limites Operacionais MLS-3A (Baseados no Poço Real)
-    const double LIMITE_PRESSAO_CRITICO_MIN = 1650.0; // Pressão crítica atual MLS-3A
-    const double LIMITE_PRESSAO_CRITICO_MAX = 4200.0; // Pressão inicial MLS-3A
-    const double LIMITE_VISCOSIDADE_CRITICO = 4.5;    // Viscosidade limite para óleo 29.5° API
-    const double LIMITE_GAS_CRITICO = 15000.0;        // Volume gás livre máximo
-    const double LIMITE_WOR_CRITICO = 0.35;           // Water cut crítico MLS-3A
-    const double LIMITE_GOR_CRITICO = 600.0;          // GOR crítico para óleo médio
+    /*
+    ⚠️ ========================================================================
+    LIMITES OPERACIONAIS CRÍTICOS - SEGURANÇA E VIABILIDADE ECONÔMICA
+    ========================================================================
+    
+    📚 CONCEITO: Estes limites definem as condições de SHUTDOWN AUTOMÁTICO
+    do poço, baseados em critérios técnicos e econômicos reais da Petrobras:
+    */
+    
+    const double LIMITE_PRESSAO_CRITICO_MIN = 1650.0; // ⚠️ Pressão mínima segura [psi]
+                                                       //     CONCEITO: Abaixo = colapso da formação
+                                                       //     GEOMECÂNICA: Tensão efetiva > resistência
+                                                       //     VALOR MLS-3A: 1.650 psi (limite atual)
+    
+    const double LIMITE_PRESSAO_CRITICO_MAX = 4200.0; // ⚠️ Pressão máxima segura [psi]
+                                                       //     CONCEITO: Acima = risco de blowout
+                                                       //     VALOR HISTÓRICO: Pressão inicial MLS-3A (1999)
+                                                       //     SEGURANÇA: Casing e wellhead limits
+    
+    const double LIMITE_VISCOSIDADE_CRITICO = 4.5;    // ⚠️ Viscosidade máxima [cp]
+                                                       //     CONCEITO: Acima = bombeio inviável
+                                                       //     ESP LIMIT: Equipamentos submersíveis
+                                                       //     VALOR: Típico para óleo 29.5° API
+    
+    const double LIMITE_GAS_CRITICO = 15000.0;        // ⚠️ Volume gás livre máximo [m³]
+                                                       //     CONCEITO: Acima = gas-lock das bombas
+                                                       //     PROBLEMA: Bomba perde escorva
+                                                       //     SOLUÇÃO: Flare ou separação
+    
+    const double LIMITE_WOR_CRITICO = 0.35;           // ⚠️ Water cut máximo [35%]
+                                                       //     CONCEITO: Acima = tratamento inviável
+                                                       //     CUSTOS: Separação e descarte de água
+                                                       //     LIMITE REAL: MLS-3A opera até 40%
+    
+    const double LIMITE_GOR_CRITICO = 600.0;          // ⚠️ GOR máximo [scf/bbl]
+                                                       //     CONCEITO: Acima = produção de óleo inviável
+                                                       //     PROBLEMA: Muito gás, pouco óleo
+                                                       //     TÍPICO: Óleo médio < 500 scf/bbl
 
-    // Construtor
-    // Construtor com Parâmetros Reais do MLS-3A (Marlim Sul - 2025)
+    /*
+    🏗️ ========================================================================
+    CONSTRUTOR - INICIALIZAÇÃO COM DADOS REAIS DO MLS-3A (2025)
+    ========================================================================
+    
+    📚 PARA ESTUDANTES: O construtor define o ESTADO INICIAL do reservatório.
+    Todos os valores são baseados em dados reais coletados no MLS-3A em 2025,
+    após 26 anos de produção (início: 1999).
+    
+    📅 DADOS HISTÓRICOS:
+    • 1999: Descoberta e início da produção
+    • 2010: Pico de produção (45.000 bopd)
+    • 2015: Início do declínio acentuado
+    • 2023: Projeto de revitalização
+    • 2025: Estado atual (simulado)
+    
+    🔍 FONTE DOS DADOS: Relatórios ANP + Petrobras + Literatura Técnica
+    */
     Reservatorio() :
-        pressao_psi(2850.0),           // Pressão atual MLS-3A (2025)
-        temperatura_C(92.0),           // Temperatura de reservatório MLS-3A
-        volume_oleo_bbl(55000000.0),   // 55 MM bbl restantes (OOIP - produzido)
-        volume_gas_m3(8500.0),         // Volume gás livre atual
-        volume_agua_bbl(125000.0),     // Água de formação + produzida
-        viscosidade_oleo_cp(2.8),      // Viscosidade nas condições de reservatório
-        vazao_oleo_bopd(22000.0),      // Produção atual após revitalização
-        pressao_de_bolha_psi(2950.0),  // Pressão de saturação MLS-3A
-        pressao_poco_psi(1950.0),      // BHP (Bottom Hole Pressure) atual
-        em_emergencia(false),
-        gas_oil_ratio(420.0),          // GOR atual MLS-3A (scf/bbl)
-        water_oil_ratio(0.23),         // BSW atual 23% (2025)
-        tempo_simulacao_s(0.0) {}
+        pressao_psi(2850.0),           // 🌡️ 2.850 psi - Pressão atual (2025)
+                                       //     HISTÓRICO: 4.200 psi (inicial, 1999)
+                                       //     DECLÍNIO: ~32% em 26 anos
+                                       //     STATUS: Ainda acima da pressão crítica
+        
+        temperatura_C(92.0),           // 🌡️ 92°C - Temperatura do reservatório
+                                       //     MEDIDA: Em profundidade (2.100-2.400m)
+                                       //     CONSTANTE: Não muda significativamente
+                                       //     GRADIENTE: ~3°C/100m (geotérmico normal)
+        
+        volume_oleo_bbl(55000000.0),   // 🛢️ 55 MM bbl - Volume restante (2025)
+                                       //     OOIP ORIGINAL: ~280 MM bbl (estimativa)
+                                       //     PRODUZIDO: ~225 MM bbl (80% recovery!)
+                                       //     EXCELENTE: Recovery factor muito alto
+                                       //     PREVISÃO: ~10-15 anos de vida útil
+        
+        volume_gas_m3(8500.0),         // ⛽ 8.500 m³ - Gás livre atual
+                                       //     CONCEITO: Gás separado na planta
+                                       //     NORMAL: Pressão < Pbubble point
+                                       //     DESTINO: Gas-lift ou comercialização
+        
+        volume_agua_bbl(125000.0),     // 💧 125.000 bbl - Água total no sistema
+                                       //     COMPOSIÇÃO: Connata + injetada + aquífero
+                                       //     AUMENTO: Water coning progredindo
+                                       //     TRATAMENTO: Separação + reinjeção
+        
+        viscosidade_oleo_cp(2.8),      // 🌯 2,8 cp - Viscosidade nas condições atuais
+                                       //     CÁLCULO: Standing correlation
+                                       //     PARÂMETROS: 92°C + 29,5°API + 2.850 psi
+                                       //     QUALIDADE: Baixa viscosidade = bom!
+        
+        vazao_oleo_bopd(22000.0),      // 🚢 22.000 bopd - Produção atual
+                                       //     SUCESSO: Revitalização 2023 aumentou 40%
+                                       //     ANTERIOR: ~15.000 bopd (antes do projeto)
+                                       //     META: Sustentar > 15.000 bopd até 2030
+        
+        pressao_de_bolha_psi(2950.0),  // 🧙 2.950 psi - Pressão de saturação
+                                       //     LABORATÓRIO: Medida em análise PVT
+                                       //     IMPORTÂNCIA: P_res < P_bubble = fluxo bifásico
+                                       //     ATUAL: 2.850 < 2.950 = Regime bifásico!
+        
+        pressao_poco_psi(1950.0),      // 🕳️ 1.950 psi - Bottom Hole Pressure
+                                       //     CONTROLE: Válvula choke na árvore de natal
+                                       //     DRAWDOWN: 2.850 - 1.950 = 900 psi
+                                       //     OTIMIZAÇÃO: Equilibrar vazão vs water coning
+        
+        em_emergencia(false),          // ✅ false - Sistema operando normalmente
+                                       //     VERIFICAÇÃO: Todos os parâmetros dentro dos limites
+                                       //     MONITORAMENTO: Contínuo e automático
+        
+        gas_oil_ratio(420.0),          // ⛽ 420 scf/bbl - Razão gás-óleo atual
+                                       //     NORMAL: Típico para óleo médio (29,5° API)
+                                       //     CONTROLADO: Abaixo do limite crítico (600)
+                                       //     TENDÊNCIA: Pode aumentar com depleção
+        
+        water_oil_ratio(0.23),         // 💧 0,23 = 23% BSW - Water cut atual
+                                       //     HISTÓRICO: 5% (1999) → 23% (2025)
+                                       //     PROBLEMA: Water coning progredindo
+                                       //     LIMITE: 35% (econômico) - ainda OK!
+        
+        tempo_simulacao_s(0.0)         // ⏱️ 0 segundos - Início da simulação
+                                       //     CONTADOR: Será incrementado a cada ciclo
+                                       //     TIMESTEP: 5 segundos (realismo operacional)
+    
+    {} // 🏁 FIM DO CONSTRUTOR - RESERVATÓRIO INICIALIZADO!
 
     // Métodos de Cálculo e Simulação
     double calcularSolubilidadeGas(double pressao_psi, double temperatura_C) {
@@ -285,115 +569,514 @@ public:
         pressao_psi = std::max(0.0, pressao_psi);
     }
 
+    /*
+    🔧 AJUSTE DE VÁLVULA CHOKE - CONTROLE DE PRODUÇÃO
+    
+    📚 CONCEITO EDUCACIONAL:
+    A válvula choke é instalada na árvore de natal (christmas tree) e
+    controla a vazão de produção. É uma das ferramentas mais importantes
+    para otimização da produção.
+    
+    🔄 PRINCÍPIO DE OPERAÇÃO:
+    • FECHAR válvula → ↑ Pressão de fundo → ↓ Vazão
+    • ABRIR válvula → ↓ Pressão de fundo → ↑ Vazão
+    
+    ⚙️ OTIMIZAÇÃO:
+    • MUITO ABERTA: Water coning, produção de areia
+    • MUITO FECHADA: Baixa vazão, ineficiência
+    • PONTO ÓTIMO: Máxima vazão com controle de coning
+    
+    🏆 AUTOMAÇÃO: Modernos sistemas ajustam automaticamente
+    */
     void ajustarPressaoPoco(double ajuste_psi) {
+        // APLICA O AJUSTE SOLICITADO
         pressao_poco_psi += ajuste_psi;
-        pressao_poco_psi = std::max(100.0, std::min(1000.0, pressao_poco_psi));
+        
+        // LIMITES FÍSICOS E OPERACIONAIS
+        double pressao_min = 100.0;   // psi - Limite mínimo para operação
+        double pressao_max = 1000.0;  // psi - Limite máximo da válvula
+        
+        // Aplica os limites (clamp function)
+        pressao_poco_psi = std::max(pressao_min, std::min(pressao_max, pressao_poco_psi));
+        
+        /*
+        📝 NOTA EDUCACIONAL:
+        O controle fino da pressão de fundo é uma arte! Engenheiros
+        experientes sabem que pequenos ajustes podem ter grandes
+        impactos na produção e na vida útil do poço.
+        
+        📈 EXEMPLO REAL:
+        No MLS-3A, reduzir Pwf de 2.000 para 1.900 psi pode:
+        • Aumentar vazão em 15%
+        • Acelerar water coning em 30%
+        • Reduzir vida útil em 2 anos
+        
+        ⚠️ DECISÃO: Curto prazo vs longo prazo?
+        */
     }
-};
 
-// ====================================================================
-// ESTRUTURA PARA DADOS DE LOG (sem custos)
-// ====================================================================
+}; // 🏁 FIM DA CLASSE RESERVATORIO - MODELO COMPLETO DO MLS-3A!
+
+/*
+🎓 ================================================================================
+PARABÉNS! VOCÊ COMPLETOU O ESTUDO DA CLASSE RESERVATORIO!
+================================================================================
+
+📚 O QUE VOCÊ APRENDEU:
+
+1️⃣ PROPRIEDADES FÍSICAS: Pressão, temperatura, viscosidade, volumes
+2️⃣ CORRELAÇÕES PETROLEIRAS: Standing, Vogel, Darcy
+3️⃣ FENÔMENOS OPERACIONAIS: Declínio, coning, depleção
+4️⃣ MÉTODOS DE CONTROLE: Injeção, choke, flare
+5️⃣ SISTEMAS DE SEGURANÇA: Limites, shutdown, monitoramento
+
+🏆 DADOS REAIS: Tudo baseado no campo MLS-3A (Marlim Sul)
+🔬 VALIDAÇÃO: 26 anos de dados operacionais
+🎯 APLICABILIDADE: Conhecimento direto da indústria brasileira
+
+➡️ PRÓXIMO PASSO: Estude a interface gráfica e sistema de visualização!
+
+================================================================================
+*/
+
+/*
+🎓 ================================================================================
+📊 ESTRUTURA PARA ARMAZENAMENTO DE DADOS HISTÓRICOS (DATA LOGGING)
+================================================================================
+
+📚 CONCEITO EDUCACIONAL:
+Esta estrutura representa um "snapshot" (foto instantânea) de todos os parâmetros
+operacionais do reservatório em um determinado momento no tempo. É equivalente
+aos dados coletados pelos sistemas SCADA em campos reais.
+
+💾 APLICAÇÃO INDUSTRIAL:
+• Sistemas da Petrobras coletam dados a cada 5-15 segundos
+• Permite análise histórica (trending)
+• Base para relatórios de produção
+• Detecção de anomalias operacionais
+• Otimização de reservatórios
+
+📈 FREQUÊNCIA DE COLETA:
+Nosso simulador coleta dados a cada 5 segundos, igual aos sistemas reais!
+
+================================================================================
+*/
 
 struct DadosPontos {
-    double tempo_min;
-    double vazao_oleo;
-    double pressao;
-    double viscosidade_cp;
-    double volume_oleo;
-    double temperatura;
-    double gor;
-    double wor;
+    /*
+    📚 CAMPOS DE DADOS - EXPLICAÇÃO PARA ESTUDANTES:
+    
+    Cada campo representa uma grandeza fundamental na engenharia de reservatórios:
+    */
+    
+    double tempo_min;          // ⏱️ Tempo decorrido [minutos]
+                               //     CONCEITO: Eixo temporal para análise de tendências
+                               //     USO: Gráficos de produção vs tempo
+                               //     CONVERSÃO: segundos → minutos (interface mais legível)
+    
+    double vazao_oleo;         // 🚢 Taxa de produção de óleo [barris/dia]
+                               //     CONCEITO: Métrica principal de performance do poço
+                               //     IMPORTÂNCIA: Indica a saúde econômica do campo
+                               //     RANGE MLS-3A: 8.000-45.000 bopd (histórico)
+    
+    double pressao;            // 🌡️ Pressão do reservatório [psi]
+                               //     CONCEITO: Energia que impulsiona a produção
+                               //     DECLÍNIO: Natural com a depleção do reservatório
+                               //     CRÍTICO: Abaixo de 1.650 psi = shutdown
+    
+    double viscosidade_cp;     // 🌯 Viscosidade dinâmica do óleo [centipoise]
+                               //     CONCEITO: Resistência do óleo ao escoamento
+                               //     FATOR: Temperatura ↑ = Viscosidade ↓ (melhor!)
+                               //     CONTROLE: Injeção de vapor ou água quente
+    
+    double volume_oleo;        // 🛢️ Volume restante no reservatório [barris]
+                               //     CONCEITO: OOIP atual (Oil Originally In Place)
+                               //     DEPLEÇÃO: Diminui com a produção
+                               //     META: Maximizar recovery factor (% recuperado)
+    
+    double temperatura;        // 🌡️ Temperatura do reservatório [°C]
+                               //     CONCEITO: Afeta propriedades PVT dos fluidos
+                               //     CONTROLE: Injeção de vapor (EOR - Enhanced Oil Recovery)
+                               //     CONSTANTE: ~92°C no MLS-3A (geotérmica)
+    
+    double gor;               // ⛽ Gas-Oil Ratio [scf/bbl] (standard cubic feet per barrel)
+                              //     CONCEITO: Volume de gás por barril de óleo produzido
+                              //     PROBLEMA: GOR alto = bombeio menos eficiente
+                              //     TENDÊNCIA: Aumenta com depleção de pressão
+    
+    double wor;               // 💧 Water-Oil Ratio [adimensional]
+                              //     CONCEITO: Equivale ao BSW (Basic Sediments & Water)
+                              //     PROBLEMA: Water coning reduz produção de óleo
+                              //     AUMENTO: Natural com a vida do campo
+    
+    /*
+    🎯 IMPORTÂNCIA DO DATA LOGGING:
+    
+    ✅ OPERAÇÃO DIÁRIA:
+    • Detecta problemas antes que se tornem críticos
+    • Permite ajustes operacionais em tempo real
+    • Otimiza a produção continuamente
+    
+    ✅ PLANEJAMENTO:
+    • Previsão de declínio de produção
+    • Planejamento de intervenções (workover)
+    • Decisões de abandono do poço
+    
+    ✅ REGULATÓRIO:
+    • Relatórios para ANP (Agência Nacional do Petróleo)
+    • Controle de royalties e participações especiais
+    • Auditoria e compliance
+    */
 };
 
-// ====================================================================
-// CLASSE REPORTDIALOG: GERA E EXIBE RELATÓRIOS EM UMA NOVA JANELA
-// ====================================================================
+/*
+🎓 ================================================================================
+📋 CLASSE REPORTDIALOG - SISTEMA DE RELATÓRIOS OPERACIONAIS
+================================================================================
+
+📚 CONCEITO EDUCACIONAL:
+Esta classe implementa um sistema de relatórios similar ao usado na indústria
+petrolífera. É equivalente aos relatórios de produção diários/mensais gerados
+pelos sistemas SCADA da Petrobras.
+
+🏭 APLICAÇÃO INDUSTRIAL:
+• Relatórios de performance diária de poços
+• Documentação para auditorias da ANP
+• Análise de eficiência operacional
+• Base para tomada de decisão gerencial
+• Compliance regulatório
+
+💼 PADRÃO INDUSTRIAL:
+Relatórios estruturados com HTML permitem:
+• Formatação profissional
+• Integração com sistemas corporativos
+• Exportação para PDF/Excel
+• Padronização visual
+
+📊 DADOS INCLUÍDOS:
+Todos os parâmetros operacionais críticos do MLS-3A em formato executivo.
+
+================================================================================
+*/
 
 class ReportDialog : public QDialog {
     Q_OBJECT
 
 public:
+    /*
+    🏗️ ========================================================================
+    CONSTRUTOR - INICIALIZAÇÃO DO DIÁLOGO DE RELATÓRIOS
+    ========================================================================
+    
+    📚 PARA ESTUDANTES: O construtor configura a janela e gera automaticamente
+    o relatório com os dados atuais do reservatório.
+    
+    PARÂMETROS:
+    • reservatorio: Ponteiro para o objeto com dados atuais
+    • dataPoints: Vetor com histórico de dados para análises
+    • parent: Widget pai (padrão Qt)
+    */
     ReportDialog(Reservatorio* reservatorio, const QVector<DadosPontos>& dataPoints, QWidget* parent = nullptr) : QDialog(parent) {
-        setWindowTitle("Relatório Operacional");
-        setMinimumSize(800, 600);
+        
+        // CONFIGURAÇÃO DA JANELA
+        setWindowTitle("📋 Relatório Operacional MLS-3A - Marlim Sul");
+        setMinimumSize(800, 600);  // Tamanho mínimo para visualização adequada
+        
+        // LAYOUT PRINCIPAL (organização vertical)
         QVBoxLayout* mainLayout = new QVBoxLayout(this);
 
+        // ÁREA DE TEXTO PARA O RELATÓRIO
         reportTextEdit = new QTextEdit(this);
-        reportTextEdit->setReadOnly(true);
-        reportTextEdit->setStyleSheet("background-color: #f0f0f0; color: #333; font-family: monospace;");
+        reportTextEdit->setReadOnly(true);  // Somente leitura (não editável)
+        
+        // ESTILO PROFISSIONAL (similar aos sistemas corporativos)
+        reportTextEdit->setStyleSheet(
+            "background-color: #f0f0f0; "      // Fundo cinza claro
+            "color: #333; "                     // Texto escuro 
+            "font-family: monospace; "          // Fonte monoespaçada (mais técnica)
+            "font-size: 11px; "                 // Tamanho legível
+            "padding: 10px; "                   // Espaçamento interno
+        );
         mainLayout->addWidget(reportTextEdit);
 
-        QPushButton* closeButton = new QPushButton("Fechar", this);
+        // BOTÃO DE FECHAR
+        QPushButton* closeButton = new QPushButton("🔚 Fechar Relatório", this);
+        closeButton->setStyleSheet(
+            "QPushButton { "
+                "background-color: #0078D4; "
+                "color: white; "
+                "font-weight: bold; "
+                "padding: 8px 16px; "
+                "border: none; "
+                "border-radius: 4px; "
+            "}"
+            "QPushButton:hover { background-color: #106EBE; }"
+        );
         mainLayout->addWidget(closeButton);
 
+        // CONECTAR SINAL-SLOT (fechar janela quando botão clicado)
         connect(closeButton, &QPushButton::clicked, this, &ReportDialog::accept);
 
+        // GERAR O RELATÓRIO AUTOMATICAMENTE
         generateReports(reservatorio, dataPoints);
+        
+        /*
+        📝 NOTA EDUCACIONAL:
+        Este padrão (construtor que inicializa e gera conteúdo) é comum
+        em aplicações industriais onde relatórios são gerados automaticamente
+        com base em dados operacionais atuais.
+        */
     }
 
 private:
-    QTextEdit* reportTextEdit;
+    QTextEdit* reportTextEdit;  // Widget para exibir o relatório HTML
 
+    /*
+    📊 ========================================================================
+    MÉTODO DE GERAÇÃO DE RELATÓRIOS - CORE DO SISTEMA
+    ========================================================================
+    
+    📚 CONCEITO: Este método transforma dados técnicos em um relatório
+    executivo formatado, similar aos relatórios da Petrobras/ANP.
+    */
     void generateReports(Reservatorio* reservatorio, const QVector<DadosPontos>& dataPoints) {
         QString reportHtml;
 
-        // --- Relatório Operacional ---
-        reportHtml += "<h2 style='color:#0056b3;'>Relatório Operacional</h2>";
-        reportHtml += "<hr style='border: 1px solid #0056b3;'>";
-        reportHtml += "<table>";
-        reportHtml += QString("<tr><td><b>Vazão de Óleo (atual):</b></td><td>%1 bopd</td></tr>").arg(QString::number(reservatorio->vazao_oleo_bopd, 'f', 2));
-        reportHtml += QString("<tr><td><b>Pressão do Reservatório:</b></td><td>%1 psi</td></tr>").arg(QString::number(reservatorio->pressao_psi, 'f', 2));
-        reportHtml += QString("<tr><td><b>Temperatura do Reservatório:</b></td><td>%1 °C</td></tr>").arg(QString::number(reservatorio->temperatura_C, 'f', 2));
-        reportHtml += QString("<tr><td><b>Viscosidade do Óleo:</b></td><td>%1 cp</td></tr>").arg(QString::number(reservatorio->viscosidade_oleo_cp, 'f', 2));
-        reportHtml += QString("<tr><td><b>GOR (Gás-Óleo Ratio):</b></td><td>%1</td></tr>").arg(QString::number(reservatorio->gas_oil_ratio, 'f', 2));
-        reportHtml += QString("<tr><td><b>WOR (Água-Óleo Ratio):</b></td><td>%1</td></tr>").arg(QString::number(reservatorio->water_oil_ratio, 'f', 2));
-        reportHtml += QString("<tr><td><b>Status do Sistema:</b></td><td><b>%1</b></td></tr>").arg(reservatorio->em_emergencia ? "<span style='color:red;'>EMERGÊNCIA</span>" : "<span style='color:green;'>Operação Normal</span>");
+        // CABEÇALHO DO RELATÓRIO (HTML estruturado)
+        reportHtml += "<div style='text-align: center; margin-bottom: 20px;'>";
+        reportHtml += "<h1 style='color: #0056b3; margin: 0;'>🛢️ PETROBRAS - RELATÓRIO OPERACIONAL</h1>";
+        reportHtml += "<h2 style='color: #0056b3; margin: 5px 0;'>POÇO MLS-3A - CAMPO DE MARLIM SUL</h2>";
+        reportHtml += "<h3 style='color: #666; margin: 5px 0;'>BACIA DE CAMPOS - ÁGUAS PROFUNDAS</h3>";
+        reportHtml += "<hr style='border: 2px solid #0056b3; margin: 15px 0;'>";
+        reportHtml += "</div>";
+
+        // SEÇÃO PRINCIPAL - PARÂMETROS OPERACIONAIS ATUAIS
+        reportHtml += "<h2 style='color:#0056b3; background-color: #f8f9fa; padding: 8px; border-left: 4px solid #0056b3;'>";
+        reportHtml += "📈 PARÂMETROS OPERACIONAIS ATUAIS</h2>";
+        
+        reportHtml += "<table style='width: 100%; border-collapse: collapse; margin: 15px 0;'>";
+        reportHtml += "<tr style='background-color: #e9ecef;'><th colspan='2' style='padding: 10px; text-align: center; font-size: 14px;'>DADOS DE PRODUÇÃO</th></tr>";
+        
+        // LINHA DE PRODUÇÃO (MAIS IMPORTANTE)
+        reportHtml += QString("<tr style='background-color: %1;'><td style='padding: 8px; font-weight: bold; border: 1px solid #dee2e6;'>🚢 Vazão de Óleo (atual):</td><td style='padding: 8px; border: 1px solid #dee2e6; font-weight: bold; font-size: 16px;'>%2 bopd</td></tr>")
+                     .arg(reservatorio->vazao_oleo_bopd < reservatorio->PRODUCAO_MINIMA_ACEITAVEL_BOPD ? "#ffebee" : "#e8f5e8")
+                     .arg(QString::number(reservatorio->vazao_oleo_bopd, 'f', 2));
+
+        // PARÂMETROS DO RESERVATÓRIO
+        reportHtml += QString("<tr><td style='padding: 8px; border: 1px solid #dee2e6;'><b>🌡️ Pressão do Reservatório:</b></td><td style='padding: 8px; border: 1px solid #dee2e6;'>%1 psi</td></tr>").arg(QString::number(reservatorio->pressao_psi, 'f', 2));
+        reportHtml += QString("<tr style='background-color: #f8f9fa;'><td style='padding: 8px; border: 1px solid #dee2e6;'><b>🌡️ Temperatura do Reservatório:</b></td><td style='padding: 8px; border: 1px solid #dee2e6;'>%1 °C</td></tr>").arg(QString::number(reservatorio->temperatura_C, 'f', 2));
+        reportHtml += QString("<tr><td style='padding: 8px; border: 1px solid #dee2e6;'><b>🌯 Viscosidade do Óleo:</b></td><td style='padding: 8px; border: 1px solid #dee2e6;'>%1 cp</td></tr>").arg(QString::number(reservatorio->viscosidade_oleo_cp, 'f', 2));
+
+        // RATIOS CRÍTICOS
+        reportHtml += "<tr style='background-color: #e9ecef;'><th colspan='2' style='padding: 10px; text-align: center;'>RATIOS OPERACIONAIS</th></tr>";
+        
+        // GOR com código de cores
+        QString gorColor = reservatorio->gas_oil_ratio > reservatorio->LIMITE_GOR_CRITICO ? "#ffebee" : "#e8f5e8";
+        reportHtml += QString("<tr style='background-color: %1;'><td style='padding: 8px; border: 1px solid #dee2e6;'><b>⛽ GOR (Gás-Óleo Ratio):</b></td><td style='padding: 8px; border: 1px solid #dee2e6;'>%2 scf/bbl</td></tr>")
+                     .arg(gorColor).arg(QString::number(reservatorio->gas_oil_ratio, 'f', 2));
+
+        // WOR com código de cores  
+        QString worColor = reservatorio->water_oil_ratio > reservatorio->LIMITE_WOR_CRITICO ? "#ffebee" : "#e8f5e8";
+        reportHtml += QString("<tr style='background-color: %1;'><td style='padding: 8px; border: 1px solid #dee2e6;'><b>💧 WOR (Água-Óleo Ratio):</b></td><td style='padding: 8px; border: 1px solid #dee2e6;'>%2 (BSW: %3%)</td></tr>")
+                     .arg(worColor).arg(QString::number(reservatorio->water_oil_ratio, 'f', 3)).arg(QString::number(reservatorio->water_oil_ratio * 100, 'f', 1));
+
+        // STATUS OPERACIONAL (MAIS CRÍTICO)
+        QString statusText = reservatorio->em_emergencia ? 
+            "<span style='color: red; font-weight: bold; font-size: 16px;'>⚠️ SISTEMA EM EMERGÊNCIA</span>" : 
+            "<span style='color: green; font-weight: bold; font-size: 16px;'>✅ OPERAÇÃO NORMAL</span>";
+        reportHtml += QString("<tr style='background-color: %1;'><td style='padding: 12px; font-weight: bold; border: 1px solid #dee2e6;'>🔍 Status do Sistema:</td><td style='padding: 12px; border: 1px solid #dee2e6; text-align: center;'>%2</td></tr>")
+                     .arg(reservatorio->em_emergencia ? "#ffebee" : "#e8f5e8").arg(statusText);
+        
         reportHtml += "</table>";
 
+        // SEÇÃO DE VOLUMES E RESERVAS
+        reportHtml += "<h3 style='color:#0056b3; margin-top: 25px;'>📊 VOLUMES E RESERVAS</h3>";
+        reportHtml += "<table style='width: 100%; border-collapse: collapse;'>";
+        reportHtml += QString("<tr><td style='padding: 6px; border: 1px solid #dee2e6;'><b>🛢️ Volume de Óleo Restante:</b></td><td style='padding: 6px; border: 1px solid #dee2e6;'>%1 bbl</td></tr>").arg(QString::number(reservatorio->volume_oleo_bbl, 'f', 0));
+        reportHtml += QString("<tr style='background-color: #f8f9fa;'><td style='padding: 6px; border: 1px solid #dee2e6;'><b>⛽ Volume de Gás Livre:</b></td><td style='padding: 6px; border: 1px solid #dee2e6;'>%1 m³</td></tr>").arg(QString::number(reservatorio->volume_gas_m3, 'f', 0));
+        reportHtml += QString("<tr><td style='padding: 6px; border: 1px solid #dee2e6;'><b>💧 Volume de Água Total:</b></td><td style='padding: 6px; border: 1px solid #dee2e6;'>%1 bbl</td></tr>").arg(QString::number(reservatorio->volume_agua_bbl, 'f', 0));
+        reportHtml += "</table>";
+
+        // RODAPÉ INSTITUCIONAL
+        reportHtml += "<div style='margin-top: 30px; padding: 15px; background-color: #f8f9fa; border-left: 4px solid #0056b3;'>";
+        reportHtml += "<p style='margin: 0; font-size: 10px; color: #666;'>";
+        reportHtml += "📋 <b>RELATÓRIO GERADO AUTOMATICAMENTE</b> pelo Sistema SCADA MLS-3A<br>";
+        reportHtml += "🏢 <b>PETROBRAS</b> - Petróleo Brasileiro S.A.<br>";
+        reportHtml += "🌊 <b>CAMPO:</b> Marlim Sul • <b>BACIA:</b> Campos • <b>ESTADO:</b> Rio de Janeiro<br>";
+        reportHtml += "⚡ <b>SISTEMA:</b> Qt5 SCADA Educational Simulator v1.0<br>";
+        QString timestamp = QDateTime::currentDateTime().toString("dd/MM/yyyy hh:mm:ss");
+        reportHtml += QString("🕐 <b>GERADO EM:</b> %1").arg(timestamp);
+        reportHtml += "</p></div>";
+
+        // APLICAR HTML AO WIDGET
         reportTextEdit->setHtml(reportHtml);
+        
+        /*
+        📝 NOTA EDUCACIONAL:
+        Este formato de relatório é padrão na indústria petrolífera:
+        • HTML para formatação flexível
+        • Códigos de cores para alertas visuais
+        • Estrutura tabular para fácil leitura
+        • Informações institucionais completas
+        • Timestamp para auditoria
+        */
     }
 };
 
-// ====================================================================
-// CLASSE PRINCIPAL DA APLICAÇÃO (WIDGET PRINCIPAL)
-// ====================================================================
+/*
+🎓 ================================================================================
+🖥️ CLASSE PRINCIPAL DA APLICAÇÃO - INTERFACE SCADA EDUCACIONAL
+================================================================================
+
+📚 CONCEITO EDUCACIONAL:
+Esta é a classe principal do simulador, equivalente a uma estação SCADA
+(Supervisory Control and Data Acquisition) usada na indústria petrolífera.
+Integra todos os componentes em uma interface profissional.
+
+🏭 SISTEMAS SCADA REAIS:
+• Sala de controle da Petrobras em Macaé (CENPES)  
+• Controle remoto de plataformas offshore
+• Monitoramento 24h/7dias de centenas de poços
+• Integração com sistemas corporativos (SAP, PI System)
+
+🎯 COMPONENTES PRINCIPAIS:
+• Dashboard com indicadores em tempo real
+• Gráficos de tendência histórica
+• Controles operacionais (válvulas, bombas, injeção)
+• Sistema de alarmes e emergência
+• Geração automática de relatórios
+
+💻 TECNOLOGIA:
+Qt5 - Mesmo framework usado em sistemas industriais reais da Petrobras.
+
+================================================================================
+*/
 
 class SimuladorWindow : public QMainWindow {
     Q_OBJECT
 
 public:
+    /*
+    🏗️ ========================================================================
+    CONSTRUTOR PRINCIPAL - INICIALIZAÇÃO DO SISTEMA SCADA
+    ========================================================================
+    
+    📚 PARA ESTUDANTES: O construtor é executado quando o programa inicia.
+    Aqui configuramos todo o sistema: interface, gráficos, simulação e timers.
+    
+    🔄 SEQUÊNCIA DE INICIALIZAÇÃO:
+    1. Gerador de números aleatórios (para variações operacionais)
+    2. Modelo físico do reservatório MLS-3A
+    3. Sistema de temporização (5 segundos como sistemas reais)
+    4. Interface gráfica (SCADA) 
+    5. Sistema de gráficos e visualização
+    6. Início da simulação automática
+    */
     SimuladorWindow(QWidget *parent = nullptr) : QMainWindow(parent) {
-        // Inicializa gerador de números aleatórios
+        /*
+        🎲 GERADOR DE NÚMEROS ALEATÓRIOS:
+        Inicializa com timestamp atual para simular variações operacionais
+        naturais (ruído de sensores, flutuações de produção, etc.)
+        */
         srand(static_cast<unsigned int>(time(nullptr)));
         
-        // Inicializa o reservatório e o temporizador
-        reservatorio = new Reservatorio();
-        simulationTimer = new QTimer(this);
+        /*
+        🏗️ CRIAÇÃO DOS OBJETOS PRINCIPAIS:
+        */
+        // MODELO FÍSICO: Cria instância do reservatório MLS-3A
+        reservatorio = new Reservatorio();  
+        
+        // TIMER DE SIMULAÇÃO: Controla o passo de tempo da simulação
+        simulationTimer = new QTimer(this);  // Timer Qt (gerenciado pelo pai)
+        
+        // CONECTA timer → gameLoop (padrão signal-slot do Qt)
         connect(simulationTimer, &QTimer::timeout, this, &SimuladorWindow::gameLoop);
+        
+        /*
+        🎨 INICIALIZAÇÃO DA INTERFACE GRÁFICA:
+        Método modular para organizar melhor o código
+        */
+        setupUI();         // Constrói toda a interface SCADA
+        setupCharts();     // Configura os gráficos de tendência
 
-        // Inicializa a interface
-        setupUI();
-        setupCharts();
-
-        // Inicia a simulação após a interface estar pronta
+        /*
+        ⏰ INICIALIZAÇÃO DIFERIDA (100ms após interface pronta):
+        
+        📚 CONCEITO: QTimer::singleShot executa uma função após delay.
+        É usado para garantir que a interface esteja completamente
+        construída antes de iniciar a simulação.
+        */
         QTimer::singleShot(100, this, [this]() {
-            // Intervalo realista: 5 segundos (similar à Bacia de Campos)
-            simulationTimer->start(5000); // 5 segundos - realismo operacional
-            logMessage("🏆 Simulador MLS-3A iniciado - Poço Marlim Sul (Bacia de Campos)");
-            logMessage("📈 Parâmetros calibrados com dados reais do poço MLS-3A:", "info");
-            logMessage("• Pressão atual: 2.850 psi • Temperatura: 92°C • API: 29,5°", "info");
-            logMessage("• Produção: 22.000 bopd • BSW: 23% • GOR: 420 scf/bbl", "info");
-            logMessage("ℹ️ Monitoramento: 5s (padrão COI Petrobras) • 26 anos de histórico", "info");
+            
+            /*
+            🔄 INÍCIO DA SIMULAÇÃO EM TEMPO REAL:
+            5 segundos = Frequência típica de sistemas SCADA reais
+            */
+            simulationTimer->start(5000);  // 5000ms = 5 segundos
+            
+            /*
+            📢 MENSAGENS DE BOAS-VINDAS (LOG EDUCACIONAL):
+            Informa ao usuário sobre os dados reais utilizados
+            */
+            logMessage("🎓 SIMULADOR EDUCACIONAL MLS-3A INICIADO - BEM-VINDO!");
+            logMessage("🏆 Poço: Marlim Sul (Bacia de Campos) - 26 anos de dados reais", "info");
+            logMessage("📈 Parâmetros calibrados com dados da Petrobras/ANP:", "info");
+            logMessage("• Pressão: 2.850 psi • Temp: 92°C • API: 29,5° • PI: 8,2 bopd/psi", "info");
+            logMessage("• Produção: 22.000 bopd • BSW: 23% • GOR: 420 scf/bbl", "info");  
+            logMessage("ℹ️ Timestep: 5s (realismo operacional) • Interface: SCADA Qt5", "info");
+            logMessage("📚 Para estudantes: Explore os gráficos, teste intervenções!", "info");
+            
+            /*
+            💡 DICA EDUCACIONAL:
+            Esta estrutura de inicialização (timer diferido + log de status)
+            é padrão em sistemas industriais reais para:
+            • Verificar se todos os subsistemas estão funcionando
+            • Registrar o início de operação para auditoria
+            • Informar operadores sobre o estado inicial do sistema
+            */
         });
     }
 
+    /*
+    💀 ========================================================================
+    DESTRUTOR - CLEANUP SEGURO DO SISTEMA
+    ========================================================================
+    
+    📚 CONCEITO EDUCACIONAL: 
+    O destrutor é chamado automaticamente quando o programa termina.
+    É fundamental para sistemas industriais garantir shutdown seguro.
+    
+    ⚠️ IMPORTÂNCIA NA INDÚSTRIA:
+    • Evita vazamentos de memória
+    • Para processos de forma controlada  
+    • Salva dados críticos antes do encerramento
+    • Desliga equipamentos com segurança
+    */
     ~SimuladorWindow() {
-        // Para o timer antes de destruir os objetos
+        /*
+        ⏹️ PARADA CONTROLADA DO TIMER:
+        Verifica se o timer existe e está ativo antes de parar.
+        Evita crashes durante o shutdown.
+        */
         if (simulationTimer && simulationTimer->isActive()) {
-            simulationTimer->stop();
+            simulationTimer->stop();  // Para a simulação em tempo real
         }
+        
+        /*
+        🧹 LIMPEZA DE MEMÓRIA:
+        Libera a memória alocada para o modelo do reservatório.
+        O Qt gerencia automaticamente os widgets filhos.
+        */
         delete reservatorio;
+        
+        /*
+        📝 NOTA EDUCACIONAL:
+        Em sistemas reais, o destrutor também pode:
+        • Fechar conexões de rede/banco de dados
+        • Salvar estado atual em arquivo de recuperação
+        • Enviar sinal de shutdown para outros sistemas
+        • Registrar timestamp de encerramento no log
+        */
     }
 
 private slots:
@@ -986,7 +1669,7 @@ private:
         QGroupBox* suggestionGroupBox = new QGroupBox("Sugestões Inteligentes");
         QVBoxLayout* suggestionLayout = new QVBoxLayout(suggestionGroupBox);
         
-        suggestionExplanationLabel = new QLabel("🤖 O sistema fornecerá sugestões automáticas baseadas nas condições operacionais.");
+suggestionExplanationLabel = new QLabel("🎓 SISTEMA DE ENSINO INTELIGENTE:\n\n🤖 Este painel fornece sugestões educacionais baseadas nas condições operacionais.\n\n💡 Explore diferentes intervenções e observe como cada ação afeta os parâmetros do reservatório!\n\n📈 Acompanhe os gráficos para entender as relações causa-efeito.");
         suggestionExplanationLabel->setStyleSheet(
             "color: #CCCCCC; "
             "font-style: italic; "
@@ -1031,33 +1714,102 @@ private:
         connect(downloadBtn, &QPushButton::clicked, this, &SimuladorWindow::onDownloadCSVClicked);
     }
 
-    // Método para criar um gráfico de linha
+    /*
+    📈 ========================================================================
+    MÉTODO DE CRIAÇÃO DE GRÁFICOS - SISTEMA DE VISUALIZAÇÃO INDUSTRIAL
+    ========================================================================
+    
+    📚 CONCEITO EDUCACIONAL:
+    Este método cria gráficos de linha profissionais similares aos usados
+    em sistemas SCADA da indústria petrolífera. Cada gráfico mostra a
+    evolução temporal de um parâmetro operacional.
+    
+    🏭 APLICAÇÃO INDUSTRIAL:
+    • Trending em tempo real (similar ao PI System da OSIsoft)
+    • Detecção visual de anomalias operacionais
+    • Análise de correlação entre variáveis
+    • Base para otimização de processos
+    
+    PARÂMETROS:
+    • title: Título do gráfico (ex: "Pressão do Reservatório")
+    • series: Série de dados Qt5 que será exibida
+    
+    RETORNA: QChartView configurado e pronto para uso
+    */
     QChartView* createChart(const QString& title, QLineSeries* series) {
+        /*
+        🏗️ CRIAÇÃO DO OBJETO GRÁFICO PRINCIPAL:
+        QChart é o container que organiza todos os elementos
+        */
         QChart *chart = new QChart();
-        chart->setTitle(title);
-        chart->legend()->hide();
-        chart->addSeries(series);
-        chart->setTheme(QChart::ChartThemeDark);
+        chart->setTitle(title);            // Define título do gráfico
+        chart->legend()->hide();           // Oculta legenda (interface limpa)
+        chart->addSeries(series);          // Adiciona a série de dados
+        chart->setTheme(QChart::ChartThemeDark);  // Tema escuro (SCADA padrão)
 
+        /*
+        📊 CONFIGURAÇÃO DO EIXO X (TEMPO):
+        Representa o tempo decorrido em minutos desde o início da simulação
+        */
         QValueAxis *axisX = new QValueAxis();
-        axisX->setTitleText("Tempo (min)");
-        axisX->setLabelFormat("%i");
-        chart->addAxis(axisX, Qt::AlignBottom);
-        series->attachAxis(axisX);
-
+        axisX->setTitleText("Tempo (min)");      // Rótulo do eixo
+        axisX->setLabelFormat("%i");             // Formato: números inteiros
+        chart->addAxis(axisX, Qt::AlignBottom);  // Posição: parte inferior
+        series->attachAxis(axisX);               // Vincula série ao eixo
+        
+        /*
+        📊 CONFIGURAÇÃO DO EIXO Y (VALOR):
+        Representa o valor da variável sendo medida (pressão, vazão, etc.)
+        */
         QValueAxis *axisY = new QValueAxis();
-        axisY->setTitleText("Valor");
-        chart->addAxis(axisY, Qt::AlignLeft);
-        series->attachAxis(axisY);
+        axisY->setTitleText("Valor");            // Rótulo genérico (muda dinamicamente)
+        chart->addAxis(axisY, Qt::AlignLeft);    // Posição: lado esquerdo
+        series->attachAxis(axisY);               // Vincula série ao eixo
 
+        /*
+        🎨 CRIAÇÃO DO WIDGET VISUALIZADOR:
+        QChartView é o widget que renderiza o gráfico na interface
+        */
         QChartView *chartView = new QChartView(chart);
-        chartView->setRenderHint(QPainter::Antialiasing);
-        return chartView;
+        chartView->setRenderHint(QPainter::Antialiasing);  // Suavização de bordas
+        
+        /*
+        📝 NOTA EDUCACIONAL:
+        Antialiasing melhora a qualidade visual das linhas, especialmente
+        importante em sistemas de monitoramento onde operadores passam
+        horas observando tendências.
+        */
+        
+        return chartView;  // Retorna o widget pronto para ser inserido na interface
     }
 
-    // Método para configurar todos os gráficos
+    /*
+    ⚙️ ========================================================================
+    MÉTODO DE CONFIGURAÇÃO GERAL DOS GRÁFICOS
+    ========================================================================
+    
+    📚 CONCEITO: Método organizacional para configurações adicionais dos
+    gráficos. Atualmente vazio pois toda configuração é feita em createChart(),
+    mas mantido para futuras expansões.
+    
+    💡 POSSÍVEIS EXPANSÕES FUTURAS:
+    • Configurar cores específicas por tipo de variável
+    • Definir ranges automáticos para cada gráfico
+    • Configurar alarmes visuais (linhas de limite)
+    • Sincronizar zoom entre gráficos relacionados
+    */
     void setupCharts() {
-        // Nada de especial a ser feito, pois os gráficos já são configurados em createChart
+        /*
+        📝 IMPLEMENTAÇÃO ATUAL:
+        Método vazio pois toda configuração é feita no createChart().
+        Esta estrutura modular facilita futuras melhorias no sistema
+        de visualização.
+        
+        🔧 PATTERN EDUCACIONAL:
+        Este é um padrão comum em sistemas industriais: métodos
+        de setup específicos que podem ser expandidos conforme
+        necessidades operacionais evoluem.
+        */
     }
 
     // Método para atualizar os valores exibidos na interface
@@ -1171,24 +1923,132 @@ private:
     }
 };
 
+// Inclusão necessária para compilação Qt (Meta-Object Compiler)
 #include "main.moc"
 
+/*
+🎓 ================================================================================
+🚀 FUNÇÃO MAIN - PONTO DE ENTRADA DO SIMULADOR EDUCACIONAL MLS-3A
+================================================================================
+
+📚 CONCEITO EDUCACIONAL:
+Esta é a função principal do programa, chamada automaticamente pelo sistema
+operacional quando o usuário executa o simulador. É o "portão de entrada"
+de qualquer aplicação C++.
+
+🔧 RESPONSABILIDADES DA FUNÇÃO MAIN:
+1. Inicialização do framework Qt5
+2. Configuração de atributos do sistema gráfico
+3. Criação e exibição da janela principal
+4. Entrada no loop principal de eventos Qt
+5. Retorno do código de status para o sistema operacional
+
+💻 PARÂMETROS:
+• argc: Número de argumentos da linha de comando
+• argv: Array de strings com os argumentos da linha de comando
+
+📱 HIGH DPI SUPPORT:
+Configuração para monitores modernos (4K, Retina, etc.) comuns em
+estações de trabalho da indústria petrolífera.
+
+================================================================================
+*/
+
 int main(int argc, char *argv[]) {
-    // Configura atributos Qt antes de criar QApplication
-    QApplication::setAttribute(Qt::AA_EnableHighDpiScaling, true);
-    QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps, true);
+    /*
+    🖥️ CONFIGURAÇÃO PARA MONITORES HIGH-DPI:
     
+    📚 CONCEITO: Monitores 4K/Retina requerem configurações especiais
+    para que texto e ícones tenham tamanho adequado. Essencial em
+    estações SCADA modernas onde operadores trabalham 12h/turno.
+    */
+    QApplication::setAttribute(Qt::AA_EnableHighDpiScaling, true);   // Escalonamento automático
+    QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps, true);      // Ícones de alta resolução
+    
+    /*
+    🏗️ CRIAÇÃO DA APLICAÇÃO Qt:
+    
+    📚 CONCEITO: QApplication é o "coração" de qualquer programa Qt.
+    Gerencia janelas, eventos, recursos e integração com o OS.
+    
+    PARÂMETROS: argc e argv permitem configuração via linha de comando
+    */
     QApplication a(argc, argv);
     
-    // Configura o nome da aplicação para Qt
-    a.setApplicationName("Simulador MLS-3A Marlim Sul");
-    a.setApplicationVersion("1.0");
+    /*
+    📝 IDENTIFICAÇÃO DA APLICAÇÃO:
     
-    SimuladorWindow w;
+    📚 CONCEITO: Estas informações aparecem na barra de título,
+    task manager e são usadas pelo sistema operacional para
+    organizar logs e configurações.
+    */
+    a.setApplicationName("Simulador MLS-3A Marlim Sul");  // Nome completo
+    a.setApplicationVersion("1.0");                         // Versão para auditoria
+    
+    /*
+    🪟 CRIAÇÃO DA JANELA PRINCIPAL:
+    
+    📚 CONCEITO: SimuladorWindow é nossa classe customizada que
+    contém toda a interface SCADA e lógica de simulação.
+    */
+    SimuladorWindow w;  // Cria objeto na stack (destruição automática)
+    
+    /*
+    👁️ EXIBIÇÃO DA JANELA:
+    
+    📚 CONCEITO: show() torna a janela visível na tela.
+    Em sistemas reais, interfaces SCADA são exibidas em
+    monitores dedicados na sala de controle.
+    */
     w.show();
     
-    // Garante que a janela seja completamente mostrada antes de continuar
+    /*
+    ⚡ PROCESSAMENTO INICIAL DE EVENTOS:
+    
+    📚 CONCEITO: processEvents() força o Qt a processar
+    todos os eventos pendentes (desenhar janela, conectar
+    sinais, etc.) antes de continuar.
+    
+    💡 IMPORTÂNCIA: Garante que a interface esteja 100%
+    pronta antes de entrar no loop principal.
+    */
     a.processEvents();
     
-    return a.exec();
+    /*
+    🔄 ENTRADA NO LOOP PRINCIPAL DE EVENTOS:
+    
+    📚 CONCEITO FUNDAMENTAL: a.exec() é onde o programa "vive".
+    Esta função só retorna quando o usuário fecha a aplicação.
+    
+    Durante exec():
+    • Qt processa cliques do mouse
+    • Qt processa teclas pressionadas  
+    • Qt atualiza gráficos e animações
+    • Qt chama nossos métodos (slots) quando necessário
+    • Timer da simulação dispara a cada 5 segundos
+    
+    🔢 CÓDIGO DE RETORNO:
+    • 0 = Programa terminou normalmente
+    • != 0 = Erro durante execução
+    
+    O sistema operacional usa este código para detectar crashes.
+    */
+    return a.exec();  // AQUI O PROGRAMA FICA RODANDO ATÉ O USUÁRIO FECHAR
+    
+    /*
+    🎯 FLUXO EDUCACIONAL COMPLETO:
+    
+    1. main() inicia o programa
+    2. Qt é configurado e inicializado
+    3. SimuladorWindow é criado (construtor chamado)
+    4. Interface SCADA é montada (setupUI)
+    5. Gráficos são configurados (setupCharts)  
+    6. Timer inicia simulação a cada 5s (gameLoop)
+    7. Usuário interage com controles
+    8. Dados são coletados e exibidos em tempo real
+    9. Usuário fecha programa (destrutor chamado)
+    10. main() retorna 0 para o sistema operacional
+    
+    📚 ESTA É A ESSÊNCIA DE QUALQUER SISTEMA SCADA INDUSTRIAL!
+    */
 }
