@@ -94,6 +94,39 @@ ensinar conceitos fundamentais de:
    • Interface mais intuitiva e profissional
    • Redução de treinamento necessário
 
+🔥 ================================================================================
+📚 MELHORIA EDUCACIONAL: TERMINOLOGIA HÍBRIDA FLARE
+================================================================================
+
+📚 ABORDAGEM PEDAGÓGICA IMPLEMENTADA:
+
+✅ PROBLEMA IDENTIFICADO:
+   • Termo "Flare" em inglês pode confundir estudantes iniciantes
+   • Foco no equipamento ao invés da função
+   • Barreira linguística para compreensão imediata
+
+✅ SOLUÇÃO HÍBRIDA ADOTADA:
+   • Interface: "Liberação de Gás (Flare)"  
+   • DIDÁTICO PRIMEIRO: Explica a função (o que faz)
+   • TÉCNICO SEGUNDO: Ensina o termo industrial (como se chama)
+   • Progressão natural: Compreensão → Terminologia
+
+✅ BENEFÍCIOS EDUCACIONAIS:
+   • Clareza imediata para estudantes iniciantes
+   • Preparação adequada para ambiente profissional  
+   • Conexão função-terminologia bem estabelecida
+   • Tooltips explicativos com contexto industrial completo
+
+✅ IMPLEMENTAÇÃO TÉCNICA:
+   • Labels de interface atualizados
+   • Mensagens de log mais descritivas
+   • Tooltips educacionais detalhados
+   • Preservação da precisão técnica
+
+🏭 CONTEXTO INDUSTRIAL PRESERVADO:
+O termo "flare" continua sendo usado nos logs e documentação técnica,
+mantendo a precisão profissional enquanto melhora a didática inicial.
+
 ================================================================================
 */
 
@@ -1378,9 +1411,9 @@ private slots:
             double vazao = suggestInputFlare->text().toDouble(&ok);
             if (ok) {
                 reservatorio->liberarGasParaQueima(vazao);
-                logMessage(QString("Acionando flare com vazão de %1 scfd.").arg(vazao), "acao");
+                logMessage(QString("Acionando liberação de gás (flare) com vazão de %1 scfd.").arg(vazao), "acao");
             } else {
-                QMessageBox::warning(this, "Erro de Entrada", "Por favor, insira um valor numérico para a vazão do flare.");
+                QMessageBox::warning(this, "Erro de Entrada", "Por favor, insira um valor numérico para a vazão de liberação de gás.");
             }
         } else if (buttonName == "abrir_valv_btn") {
             reservatorio->ajustarPressaoPoco(-50.0);
@@ -1943,7 +1976,51 @@ private:
         QWidget* waterControl = createInterventionControl("Injeção de Água", "Volume (bbl)", "1000", "Temp (°C)", "100");
         QWidget* gasControl = createInterventionControl("Injeção de Gás", "Volume (m³)", "5000", "Densidade", "0.7");
         QWidget* vaporControl = createInterventionControl("Injeção de Vapor", "Tempo (s)", "500");
-        QWidget* flareControl = createInterventionControl("Sistema Flare", "Vazão (scfd)", "5000");
+        /*
+        🔥 ====================================================================
+        TERMINOLOGIA HÍBRIDA: EDUCACIONAL + TÉCNICA
+        ====================================================================
+        
+        📚 ABORDAGEM EDUCACIONAL IMPLEMENTADA:
+        "Liberação de Gás (Flare)" - Combina clareza didática com precisão técnica
+        
+        • DIDÁTICO PRIMEIRO: "Liberação de Gás" explica a FUNÇÃO
+        • TÉCNICO ENTRE PARÊNTESES: "(Flare)" ensina o TERMO INDUSTRIAL
+        • PROGRESSÃO NATURAL: Função → Terminologia técnica
+        
+        🏭 BENEFÍCIO EDUCACIONAL:
+        Estudantes entendem o propósito antes de aprender o jargão técnico,
+        preparando-os adequadamente para a realidade industrial.
+        */
+        QWidget* flareControl = createInterventionControl("Liberação de Gás (Flare)", "Vazão (scfd)", "5000");
+        
+        /*
+        💡 ====================================================================
+        TOOLTIP EDUCACIONAL: SISTEMA DE LIBERAÇÃO DE GÁS (FLARE)
+        ====================================================================
+        
+        📚 EXPLICAÇÃO TÉCNICA PARA ESTUDANTES:
+        Adicionando tooltip com explicação completa do sistema flare para
+        contexto educacional, conectando função à terminologia industrial.
+        */
+        flareControl->setToolTip(
+            "🔥 LIBERAÇÃO DE GÁS (FLARE) - SISTEMA DE SEGURANÇA\n\n"
+            "📚 FUNÇÃO:\n"
+            "• Queima controlada de gases excedentes\n"
+            "• Sistema de alívio de pressão por segurança\n"
+            "• Controle de emissões (melhor queimar que liberar metano)\n\n"
+            "🛢️ APLICAÇÃO NO MLS-3A:\n"
+            "• Remove gás livre em excesso do sistema\n"
+            "• Previne acúmulo perigoso de gases\n"
+            "• Mantém eficiência das bombas (evita gas-lock)\n\n"
+            "⚡ OPERAÇÃO:\n"
+            "• Vazão típica: 5.000-15.000 scfd\n"
+            "• Acionamento automático por alta pressão\n"
+            "• Monitoramento contínuo de emissões\n\n"
+            "🏭 REALIDADE INDUSTRIAL:\n"
+            "Presente em todas as plataformas offshore da Petrobras.\n"
+            "A 'tocha' visível nas plataformas é exatamente este sistema!"
+        );
         
         // Posicionar controles em grid 2x2
         interventionGrid->addWidget(waterControl, 0, 0);
@@ -2269,7 +2346,7 @@ suggestionExplanationLabel = new QLabel("🎓 SISTEMA DE ENSINO INTELIGENTE:\n\n
         }
 
         if (reservatorio->volume_gas_m3 > 8000) {
-            suggestion += "- Volume de gás alto: considere liberar gás para queima (flare).\n";
+            suggestion += "- Volume de gás alto: considere ativar liberação de gás (flare).\n";
             suggestInputFlare->setText("8000");
             hasSuggestion = true;
         }
@@ -2279,7 +2356,7 @@ suggestionExplanationLabel = new QLabel("🎓 SISTEMA DE ENSINO INTELIGENTE:\n\n
             suggestInputWater->setPlaceholderText("Volume Água (bbl)");
             suggestInputGas->setPlaceholderText("Volume Gás (m³)");
             suggestInputVapor->setPlaceholderText("Tempo Vapor (s)");
-            suggestInputFlare->setPlaceholderText("Vazão Flare (scfd)");
+            suggestInputFlare->setPlaceholderText("Vazão Liberação Gás (scfd)");
         } else {
             suggestionExplanationLabel->setText(suggestion);
         }
