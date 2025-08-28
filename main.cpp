@@ -59,6 +59,41 @@ ensinar conceitos fundamentais de:
    • Lógica centralizada e testável
    • Comportamento previsível
 
+🎨 ================================================================================
+🖥️ AJUSTES DE LAYOUT - MELHORIAS DE USABILIDADE
+================================================================================
+
+📚 OTIMIZAÇÕES VISUAIS IMPLEMENTADAS:
+
+✅ LOG DE EVENTOS:
+   • Fonte aumentada: 11px → 14px (+27% legibilidade)
+   • Melhor visibilidade para monitoramento em tempo real
+   • Reduz fadiga visual em operações de longa duração
+   • Padrão adequado para ambientes industriais 24/7
+
+✅ INDICADORES OPERACIONAIS:
+   • Unidades de medida: 10px → 13px (+30% legibilidade)
+   • Font-weight aumentado para melhor destaque visual
+   • Identificação mais rápida das grandezas físicas
+   • Redução de erros de interpretação operacional
+
+🏭 BENEFÍCIOS PARA OPERAÇÃO INDUSTRIAL:
+
+✅ ERGONOMIA:
+   • Menor esforço visual para leitura
+   • Adequação para monitores grandes (>24")
+   • Conformidade com padrões HMI industriais
+
+✅ SEGURANÇA OPERACIONAL:
+   • Redução de erros por má interpretação visual  
+   • Identificação mais rápida de eventos críticos
+   • Melhor experiência do usuário em situações de stress
+
+✅ PRODUTIVIDADE:
+   • Menor tempo para localizar informações
+   • Interface mais intuitiva e profissional
+   • Redução de treinamento necessário
+
 ================================================================================
 */
 
@@ -1684,9 +1719,29 @@ private:
             valueLabel->setStyleSheet("font-size: 20px; font-weight: bold; color: #00FF00; min-height: 30px;");
             indicatorLabels.append(valueLabel);
             
+            /*
+            📏 ====================================================================
+            AJUSTE DE LAYOUT: UNIDADES DE MEDIDA COM FONTE AUMENTADA
+            ====================================================================
+            
+            📚 MELHORIA DE USABILIDADE:
+            Aumento da fonte das unidades de medida de 10px para 13px para
+            melhor legibilidade dos indicadores operacionais.
+            
+            🏭 BENEFÍCIO INDUSTRIAL:
+            • Identificação mais rápida das unidades pelos operadores
+            • Redução de erros de interpretação de grandezas
+            • Padrão mais adequado para dashboards industriais
+            • Melhor experiência visual em monitores grandes (SCADA)
+            */
             QLabel* unitLabel = new QLabel(units[i], this);
             unitLabel->setAlignment(Qt::AlignCenter);
-            unitLabel->setStyleSheet("font-size: 10px; color: #888888; margin-top: 2px;");
+            unitLabel->setStyleSheet(
+                "font-size: 13px; "      // AUMENTADO: 10px → 13px (+30% legibilidade)
+                "color: #888888; "       // Cor mantida (contraste adequado)
+                "margin-top: 2px; "      // Espaçamento mantido
+                "font-weight: 500;"      // NOVO: Peso ligeiramente aumentado para destaque
+            );
             
             boxLayout->addWidget(titleLabel);
             boxLayout->addWidget(valueLabel);
@@ -1770,13 +1825,28 @@ private:
         logTextEdit = new QTextEdit();
         logTextEdit->setReadOnly(true);
         logTextEdit->setMinimumHeight(300);
+        /*
+        📝 ========================================================================
+        AJUSTE DE LAYOUT: FONTE DO LOG DE EVENTOS AUMENTADA
+        ========================================================================
+        
+        📚 MELHORIA DE USABILIDADE:
+        Aumento da fonte de 11px para 14px para melhor legibilidade do log
+        de eventos, facilitando o monitoramento operacional em tempo real.
+        
+        🏭 BENEFÍCIO INDUSTRIAL:
+        • Melhor visibilidade para operadores em salas de controle
+        • Redução da fadiga visual em turnos longos (12h)
+        • Facilita identificação rápida de eventos críticos
+        • Padrão mais adequado para monitores industriais
+        */
         logTextEdit->setStyleSheet(
             "QTextEdit { "
                 "background-color: #0a0a0a; "
                 "border: 1px solid #333333; "
                 "color: #CCCCCC; "
                 "font-family: 'Courier New', monospace; "
-                "font-size: 11px; "
+                "font-size: 14px; "  // AUMENTADO: 11px → 14px (+27% legibilidade)
             "}"
         );
         logLayout->addWidget(logTextEdit);
