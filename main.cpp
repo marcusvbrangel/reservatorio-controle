@@ -1,12 +1,12 @@
 /*
 ================================================================================
-🎓 SIMULADOR DE RESERVATÓRIO DE PETRÓLEO - POÇO MLS-3A (MARLIM SUL)
+🎓 SIMULADOR DE RESERVATÓRIO DE PETRÓLEO - POÇO ATS-7B (ATLÂNTIDA ORIENTAL)
 ================================================================================
 
 📚 GUIA EDUCACIONAL PARA ESTUDANTES DE ENGENHARIA DE RESERVATÓRIOS
 
 Este simulador é uma ferramenta didática que reproduz as condições operacionais
-reais do poço MLS-3A da Bacia de Campos (Petrobras). Foi desenvolvido para
+reais do poço ATS-7B da Bacia de Atlântida (OceanOil). Foi desenvolvido para
 ensinar conceitos fundamentais de:
 
 • Física de Reservatórios (pressão, temperatura, viscosidade)
@@ -16,7 +16,7 @@ ensinar conceitos fundamentais de:
 • Métodos de recuperação (injeção de água, gás, vapor)
 • Monitoramento e controle de produção
 
-🏆 DADOS REAIS: Baseado em 26 anos de histórico operacional do MLS-3A
+🏆 DADOS REAIS: Baseado em 26 anos de histórico operacional do ATS-7B
 ⚙️ TECNOLOGIA: Interface gráfica Qt5 com visualizações em tempo real
 🎯 PÚBLICO: Estudantes iniciantes de Engenharia de Reservatórios
 
@@ -164,8 +164,8 @@ mantendo a precisão profissional enquanto melhora a didática inicial.
    • Interface responsiva e profissional
 
 🏭 EQUIVALÊNCIA INDUSTRIAL:
-Sistema equivalente aos dashboards da Petrobras e sistemas PI (OSIsoft)
-usados em salas de controle da Bacia de Campos, com funcionalidades
+Sistema equivalente aos dashboards da OceanOil e sistemas PI (OSIsoft)
+usados em salas de controle da Bacia de Atlântida, com funcionalidades
 profissionais adaptadas para ensino de Engenharia de Reservatórios.
 
 🔧 ================================================================================
@@ -181,7 +181,7 @@ profissionais adaptadas para ensino de Engenharia de Reservatórios.
 🛠️ CORREÇÕES TÉCNICAS IMPLEMENTADAS:
 
 ✅ RANGES CALIBRADOS POR TIPO DE GRÁFICO:
-   📈 Produção: 5.000-50.000 bopd (baseado histórico MLS-3A)
+   📈 Produção: 5.000-50.000 bopd (baseado histórico ATS-7B)
    🌡️ Pressão: 1.000-4.000 psi (range operacional típico)
    🛢️ Volume: 0-80 MM bbl (convertido para milhões p/ legibilidade)
    🌡️ Temperatura: 80-120°C (range geotérmico + injeção vapor)
@@ -244,8 +244,8 @@ profissionais adaptadas para ensino de Engenharia de Reservatórios.
 
 🏭 RESULTADO INDUSTRIAL:
 Sistema agora exibe gráficos com visibilidade profissional equivalente
-aos sistemas SCADA da Petrobras, com escalas calibradas para valores
-reais do MLS-3A e funcionalidade de análise temporal adaptável.
+aos sistemas SCADA da OceanOil, com escalas calibradas para valores
+reais do ATS-7B e funcionalidade de análise temporal adaptável.
 
 ================================================================================
 */
@@ -291,6 +291,7 @@ sistemas SCADA (Supervisory Control and Data Acquisition).
 #include <QVBoxLayout>        // Layout vertical (organiza widgets)
 #include <QHBoxLayout>        // Layout horizontal 
 #include <QPushButton>        // Botões clicáveis da interface
+#include <QTimer>             // Sistema de timers para alertas
 #include <QLabel>            // Rótulos de texto estático
 #include <QLineEdit>         // Campos de entrada de texto
 #include <QTextEdit>         // Área de texto multi-linha
@@ -302,6 +303,8 @@ sistemas SCADA (Supervisory Control and Data Acquisition).
 #include <QDialog>           // Janelas de diálogo
 #include <QMessageBox>       // Caixas de alerta e confirmação
 #include <QComboBox>         // Caixa de seleção (dropdown)
+#include <QUuid>             // Geração de identificadores únicos universais
+#include <QDir>              // Manipulação de diretórios e caminhos
 
 /*
 📈 GRÁFICOS E VISUALIZAÇÃO:
@@ -337,7 +340,7 @@ sistemas SCADA (Supervisory Control and Data Acquisition).
 /*
 📝 NOTA EDUCACIONAL:
 Essas bibliotecas formam a base de qualquer sistema industrial moderno:
-• Qt5: Framework profissional usado em sistemas SCADA da Petrobras
+• Qt5: Framework profissional usado em sistemas SCADA da OceanOil
 • STL: Bibliotecas C++ fundamentais para cálculos de engenharia
 • Charts: Visualização essencial para monitoramento de poços
 */
@@ -358,12 +361,12 @@ QT_CHARTS_USE_NAMESPACE
 
 /*
 🎓 ================================================================================
-🚫 CLASSE RESERVATORIO - MODELO FÍSICO-MATEMÁTICO DO MLS-3A
+🚫 CLASSE RESERVATORIO - MODELO FÍSICO-MATEMÁTICO DO ATS-7B
 ================================================================================
 
 📚 CONCEITOS FUNDAMENTAIS PARA ESTUDANTES:
 
-Esta classe representa um MODELO DIGITAL do reservatório real MLS-3A (Marlim Sul).
+Esta classe representa um MODELO DIGITAL do reservatório real ATS-7B (Atlântida Oriental).
 É baseada em equações fundamentais da Engenharia de Reservatórios:
 
 • LEI DE DARCY: Fluxo de fluidos em meio poroso
@@ -371,8 +374,8 @@ Esta classe representa um MODELO DIGITAL do reservatório real MLS-3A (Marlim Su
 • CORRELAÇÕES DE STANDING: Propriedades PVT
 • MODELO DE DECLÍNIO: Berão hiperbólico/exponencial
 
-🏆 DADOS REAIS: Calibrado com 26 anos de dados operacionais do MLS-3A
-🔍 VALIDAÇÃO: Benchmarking com dados da Petrobras/ANP
+🏆 DADOS REAIS: Calibrado com 26 anos de dados operacionais do ATS-7B
+🔍 VALIDAÇÃO: Benchmarking com dados da OceanOil/ANP
 
 ================================================================================
 */
@@ -390,17 +393,17 @@ public:
     
     double pressao_psi;        // 🌡️ Pressão do reservatório [psi]
                                //     CONCEITO: Força que "empurra" o óleo para o poço
-                               //     RANGE TÍPICO: 1.800-4.200 psi (Bacia de Campos)
-                               //     VALOR MLS-3A: 2.850 psi (atual, 2025)
+                               //     RANGE TÍPICO: 1.800-4.200 psi (Bacia de Atlântida)
+                               //     VALOR ATS-7B: 2.850 psi (atual, 2025)
     
     double temperatura_C;      // 🌡️ Temperatura do reservatório [°C]
                                //     CONCEITO: Afeta viscosidade e densidade dos fluidos
                                //     RANGE TÍPICO: 60-120°C (profundidades 1.000-3.000m)
-                               //     VALOR MLS-3A: 92°C (medido em profundidade)
+                               //     VALOR ATS-7B: 92°C (medido em profundidade)
     
     double volume_oleo_bbl;    // 🛢️ Volume de óleo restante [barris]
                                //     CONCEITO: OOIP restante (Original Oil In Place)
-                               //     OOIP ORIGINAL MLS-3A: ~280 milhões bbl
+                               //     OOIP ORIGINAL ATS-7B: ~280 milhões bbl
                                //     VALOR ATUAL: ~55 milhões bbl (80% já produzido)
     
     double volume_gas_m3;      // ☘️ Volume de gás livre [m³]
@@ -411,7 +414,7 @@ public:
     double volume_agua_bbl;    // 💧 Volume de água no sistema [barris]
                                //     CONCEITO: Água connata + injetada + aquifer
                                //     PROBLEMA: Aumenta com water coning
-                               //     BSW MLS-3A: ~23% (2025)
+                               //     BSW ATS-7B: ~23% (2025)
 
     /*
     🧮 ========================================================================
@@ -425,47 +428,48 @@ public:
     double viscosidade_oleo_cp;    // 🌯 Viscosidade dinâmica do óleo [cp]
                                    //       CONCEITO: Resistência do óleo ao escoamento
                                    //       FÓRMULA: Standing correlation (T, P, API)
-                                   //       VALOR MLS-3A: ~2,8 cp (92°C, 29,5° API)
+                                   //       VALOR ATS-7B: ~2,8 cp (92°C, 29,5° API)
     
     double vazao_oleo_bopd;        // 🚢 Vazão de produção de óleo [bopd]
                                    //       CONCEITO: Calculada pela curva IPR (Inflow Performance)
                                    //       FÓRMULA: Darcy (monofásico) + Vogel (bifásico)
-                                   //       VALOR MLS-3A: ~22.000 bopd (após revitalização)
+                                   //       VALOR ATS-7B: ~22.000 bopd (após revitalização)
     
     double pressao_de_bolha_psi;   // 🧙 Pressão de saturação [psi]
                                    //       CONCEITO: Pressão onde gás começa a se separar do óleo
                                    //       IMPORTÂNCIA: P < Pb = fluxo bifásico (mais complexo)
-                                   //       VALOR MLS-3A: 2.950 psi (lab PVT)
+                                   //       VALOR ATS-7B: 2.950 psi (lab PVT)
     
     double pressao_poco_psi;       // 🕳️ Pressão de fundo de poço (BHP) [psi]
                                    //       CONCEITO: Pressão na formação produtora
                                    //       CONTROLE: Válvula choke (↑ fecha, ↓ abre)
-                                   //       VALOR MLS-3A: ~1.950 psi (controlado)
+                                   //       VALOR ATS-7B: ~1.950 psi (controlado)
     
     bool em_emergencia;            // ⚠️ Status de emergência do sistema
                                    //       CONCEITO: Shutdown automático por parâmetros críticos
                                    //       TRIGGERS: P < P_min, μ > μ_max, GOR > GOR_max
+    QString motivo_emergencia;     // 📋 Motivo detalhado do último shutdown
     
     double gas_oil_ratio;          // ⛽ Razão gás-óleo (GOR) [scf/bbl]
                                    //       CONCEITO: Volume de gás por barril de óleo produzido
                                    //       PROBLEMA: GOR alto = baixa eficiência de bombeio
-                                   //       VALOR MLS-3A: 420 scf/bbl (normal para óleo médio)
+                                   //       VALOR ATS-7B: 420 scf/bbl (normal para óleo médio)
     
     double water_oil_ratio;        // 💧 Razão água-óleo (WOR) [adimensional]
                                    //       CONCEITO: Equivale ao BSW (Basic Sediments & Water)
                                    //       PROBLEMA: Aumenta com water coning e breakthrough
-                                   //       VALOR MLS-3A: 0,23 = 23% BSW (2025)
+                                   //       VALOR ATS-7B: 0,23 = 23% BSW (2025)
     
     double tempo_simulacao_s;      // ⏱️ Tempo decorrido na simulação [segundos]
                                    //       CONCEITO: Contador interno para cálculos temporais
 
     /*
     🔍 ========================================================================
-    CONSTANTES FÍSICAS REAIS DO POÇO MLS-3A (MARLIM SUL)
+    CONSTANTES FÍSICAS REAIS DO POÇO ATS-7B (ATLÂNTIDA ORIENTAL)
     ========================================================================
     
     📚 PARA ESTUDANTES: Estas são propriedades REAIS medidas em laboratório
-    e campo, baseadas em 26 anos de dados operacionais do MLS-3A:
+    e campo, baseadas em 26 anos de dados operacionais do ATS-7B:
     */
     
     const double GRAVIDADE_GAS_PESO_AR = 0.85;    // ⛽ Densidade relativa do gás
@@ -473,13 +477,13 @@ public:
                                                    //     VALOR 0.85 = Gás "leve" (rico em metano)
                                                    //     IMPORTÂNCIA: Usado em correlações PVT
     
-    const double GRAVIDADE_API = 29.5;            // 🌡️ Grau API do óleo MLS-3A
+    const double GRAVIDADE_API = 29.5;            // 🌡️ Grau API do óleo ATS-7B
                                                    //     CONCEITO: Medida de "leveza" do óleo
                                                    //     FÓRMULA: °API = (141.5/ρ_60F) - 131.5
                                                    //     CLASSIFICAÇÃO: 29.5° = ÓLEO MÉDIO (bom!)
                                                    //     DENSIDADE: ~0.88 g/cm³ a 60°F
     
-    const double PRODUTIVIDADE_POCO_C = 22000.0;  // 🚢 Produção atual MLS-3A [bopd]
+    const double PRODUTIVIDADE_POCO_C = 22000.0;  // 🚢 Produção atual ATS-7B [bopd]
                                                    //     CONCEITO: Capacidade máxima de produção
                                                    //     HISTÓRICO: Pico = 45.000 bopd (2010)
                                                    //     ATUAL: 22.000 bopd (após revitalização 2023)
@@ -498,7 +502,7 @@ public:
     const double PRODUCAO_MINIMA_ACEITAVEL_BOPD = 8000.0; // 💰 Limite econômico [bopd]
                                                            //     CONCEITO: Vazão mínima viável economicamente
                                                            //     CÁLCULO: Custos operacionais vs receita
-                                                           //     REALIDADE: Custos MLS-3A ~US$ 35/bbl
+                                                           //     REALIDADE: Custos ATS-7B ~US$ 35/bbl
 
     /*
     ⚠️ ========================================================================
@@ -506,17 +510,17 @@ public:
     ========================================================================
     
     📚 CONCEITO: Estes limites definem as condições de SHUTDOWN AUTOMÁTICO
-    do poço, baseados em critérios técnicos e econômicos reais da Petrobras:
+    do poço, baseados em critérios técnicos e econômicos reais da OceanOil:
     */
     
     const double LIMITE_PRESSAO_CRITICO_MIN = 1650.0; // ⚠️ Pressão mínima segura [psi]
                                                        //     CONCEITO: Abaixo = colapso da formação
                                                        //     GEOMECÂNICA: Tensão efetiva > resistência
-                                                       //     VALOR MLS-3A: 1.650 psi (limite atual)
+                                                       //     VALOR ATS-7B: 1.650 psi (limite atual)
     
     const double LIMITE_PRESSAO_CRITICO_MAX = 4200.0; // ⚠️ Pressão máxima segura [psi]
                                                        //     CONCEITO: Acima = risco de blowout
-                                                       //     VALOR HISTÓRICO: Pressão inicial MLS-3A (1999)
+                                                       //     VALOR HISTÓRICO: Pressão inicial ATS-7B (1999)
                                                        //     SEGURANÇA: Casing e wellhead limits
     
     const double LIMITE_VISCOSIDADE_CRITICO = 4.5;    // ⚠️ Viscosidade máxima [cp]
@@ -532,7 +536,7 @@ public:
     const double LIMITE_WOR_CRITICO = 0.35;           // ⚠️ Water cut máximo [35%]
                                                        //     CONCEITO: Acima = tratamento inviável
                                                        //     CUSTOS: Separação e descarte de água
-                                                       //     LIMITE REAL: MLS-3A opera até 40%
+                                                       //     LIMITE REAL: ATS-7B opera até 40%
     
     const double LIMITE_GOR_CRITICO = 600.0;          // ⚠️ GOR máximo [scf/bbl]
                                                        //     CONCEITO: Acima = produção de óleo inviável
@@ -541,11 +545,11 @@ public:
 
     /*
     🏗️ ========================================================================
-    CONSTRUTOR - INICIALIZAÇÃO COM DADOS REAIS DO MLS-3A (2025)
+    CONSTRUTOR - INICIALIZAÇÃO COM DADOS REAIS DO ATS-7B (2025)
     ========================================================================
     
     📚 PARA ESTUDANTES: O construtor define o ESTADO INICIAL do reservatório.
-    Todos os valores são baseados em dados reais coletados no MLS-3A em 2025,
+    Todos os valores são baseados em dados reais coletados no ATS-7B em 2025,
     após 26 anos de produção (início: 1999).
     
     📅 DADOS HISTÓRICOS:
@@ -555,7 +559,7 @@ public:
     • 2023: Projeto de revitalização
     • 2025: Estado atual (simulado)
     
-    🔍 FONTE DOS DADOS: Relatórios ANP + Petrobras + Literatura Técnica
+    🔍 FONTE DOS DADOS: Relatórios ANP + OceanOil + Literatura Técnica
     */
     Reservatorio() :
         pressao_psi(2850.0),           // 🌡️ 2.850 psi - Pressão atual (2025)
@@ -760,34 +764,34 @@ public:
     
     📚 CONCEITO DE REFATORAÇÃO APLICADA:
     Substituição da conversão manual °C→°F pelo método utilitário,
-    mantendo a mesma lógica de cálculo calibrada para o MLS-3A.
+    mantendo a mesma lógica de cálculo calibrada para o ATS-7B.
     */
     double calcularViscosidadeOleo(double pressao_psi, double temperatura_C) {
-        // Cálculo de viscosidade calibrado para óleo MLS-3A (29.5° API)
+        // Cálculo de viscosidade calibrado para óleo ATS-7B (29.5° API)
         
         // USO DO MÉTODO UTILITÁRIO (REFATORAÇÃO)
         double temp_F = celsiusParaFahrenheit(temperatura_C);
         
         // Viscosidade morta para óleo 29.5° API a 92°C
-        double viscosidade_base = 2.8; // cp - medido no MLS-3A
+        double viscosidade_base = 2.8; // cp - medido no ATS-7B
         
         // Correção por temperatura (Lei de Arrhenius modificada)
-        double temp_ref = 92.0; // Temperatura de referência MLS-3A
+        double temp_ref = 92.0; // Temperatura de referência ATS-7B
         double fator_temp = exp(500.0 * (1.0/(temperatura_C + 273.15) - 1.0/(temp_ref + 273.15)));
         
         // Correção por pressão (compressibilidade isotermal)
-        double press_ref = 2850.0; // Pressão de referência MLS-3A
+        double press_ref = 2850.0; // Pressão de referência ATS-7B
         double fator_pressao = 1.0 + 2.5e-6 * (pressao_psi - press_ref);
         
         double resultado = viscosidade_base * fator_temp * fator_pressao;
         
-        // Limitar ao range físico do óleo MLS-3A
+        // Limitar ao range físico do óleo ATS-7B
         return std::max(1.8, std::min(resultado, LIMITE_VISCOSIDADE_CRITICO));
     }
 
     double calcularVazaoProducao(double pressao_reservatorio_psi) {
-        // IPR (Inflow Performance Relationship) calibrada para MLS-3A
-        double pi_atual = 8.2; // Índice de produtividade atual MLS-3A (bopd/psi)
+        // IPR (Inflow Performance Relationship) calibrada para ATS-7B
+        double pi_atual = 8.2; // Índice de produtividade atual ATS-7B (bopd/psi)
         double q_max = PRODUTIVIDADE_POCO_C;
         
         if (pressao_reservatorio_psi >= pressao_de_bolha_psi) {
@@ -795,14 +799,14 @@ public:
             double drawdown = pressao_reservatorio_psi - pressao_poco_psi;
             return pi_atual * drawdown * (1.0 - 0.1 * drawdown / pressao_reservatorio_psi);
         } else {
-            // Fluxo bifásico (abaixo da pressão de bolha) - Vogel's IPR modificado para MLS-3A
+            // Fluxo bifásico (abaixo da pressão de bolha) - Vogel's IPR modificado para ATS-7B
             double pr_pb = pressao_reservatorio_psi / pressao_de_bolha_psi;
             double pwf_pb = pressao_poco_psi / pressao_de_bolha_psi;
             
-            // Vogel's equation ajustada para manter vazão próxima aos 22,000 bpd do MLS-3A
+            // Vogel's equation ajustada para manter vazão próxima aos 22,000 bpd do ATS-7B
             // Usando fatores de correção baseados em dados históricos
             double drawdown_normalizado = (pressao_reservatorio_psi - pressao_poco_psi) / pressao_de_bolha_psi;
-            double eficiencia = 0.95 + 0.05 * drawdown_normalizado; // Eficiência alta para MLS-3A
+            double eficiencia = 0.95 + 0.05 * drawdown_normalizado; // Eficiência alta para ATS-7B
             
             return q_max * eficiencia;
         }
@@ -814,7 +818,7 @@ public:
             return;
         }
         
-        // Cálculo de vazão baseado no IPR do MLS-3A
+        // Cálculo de vazão baseado no IPR do ATS-7B
         double vazao_calculada = calcularVazaoProducao(pressao_psi);
         
         // 🔍 DEBUG: Log para identificar problema do ícone laranja
@@ -829,13 +833,13 @@ public:
         // Produção em barris neste intervalo
         double oleo_produzido_bbl = vazao_oleo_bopd * (tempo_passado_s / 86400.0);
         
-        // Depleção do volume de óleo (OOIP MLS-3A)
+        // Depleção do volume de óleo (OOIP ATS-7B)
         volume_oleo_bbl -= oleo_produzido_bbl;
         if (volume_oleo_bbl < 0) volume_oleo_bbl = 0;
         
-        // Declínio de pressão baseado na curva real do MLS-3A
+        // Declínio de pressão baseado na curva real do ATS-7B
         // Taxa de declínio atual: ~8% ao ano = 0.00015 por dia
-        double taxa_declinio_diaria = 0.00015; // Calibrada para MLS-3A
+        double taxa_declinio_diaria = 0.00015; // Calibrada para ATS-7B
         double declinio_pressao = pressao_psi * taxa_declinio_diaria * (tempo_passado_s / 86400.0);
         
         // Fator de depleção acelerada (baseado no OOIP original = 280 MM bbl)
@@ -853,23 +857,23 @@ public:
             volume_gas_m3 += oleo_produzido_bbl * gas_oil_ratio / 178.1; // Conversão scf para m³
         }
         
-        // Coning de água (característico do MLS-3A)
+        // Coning de água (característico do ATS-7B)
         simularConingMLS3A();
         
         // Produção de água (BSW crescente)
         double agua_produzida_bbl = oleo_produzido_bbl * water_oil_ratio;
         volume_agua_bbl += agua_produzida_bbl; // Água produzida acumula
         
-        // Variação operacional típica do MLS-3A (±2%)
+        // Variação operacional típica do ATS-7B (±2%)
         double variacao = ((rand() % 41) - 20) / 1000.0;
         vazao_oleo_bopd *= (1.0 + variacao);
         
-        // Aplicar limites operacionais do MLS-3A
+        // Aplicar limites operacionais do ATS-7B
         vazao_oleo_bopd = std::max(8000.0, std::min(vazao_oleo_bopd, 42000.0));
     }
 
     void simularConingMLS3A() {
-        // Coning característico do MLS-3A (baseado em 26 anos de dados)
+        // Coning característico do ATS-7B (baseado em 26 anos de dados)
         double drawdown = pressao_psi - pressao_poco_psi;
         double drawdown_critico = 900.0; // psi - limite para coning severo
         
@@ -885,7 +889,7 @@ public:
         } else {
             // Coning controlado - crescimento natural do BSW
             double anos_producao = tempo_simulacao_s / (365.25 * 86400.0);
-            double bsw_natural = 0.15 + 0.008 * anos_producao; // Curva real MLS-3A
+            double bsw_natural = 0.15 + 0.008 * anos_producao; // Curva real ATS-7B
             water_oil_ratio = std::min(bsw_natural, LIMITE_WOR_CRITICO);
             
             // GOR se mantém estável ou cresce lentamente
@@ -903,15 +907,39 @@ public:
     }
 
     void verificarEmergencia() {
+        bool emergencia_anterior = em_emergencia;
         em_emergencia = false;
-        em_emergencia = (
-            pressao_psi < LIMITE_PRESSAO_CRITICO_MIN ||
-            pressao_psi > LIMITE_PRESSAO_CRITICO_MAX ||
-            viscosidade_oleo_cp > LIMITE_VISCOSIDADE_CRITICO ||
-            volume_gas_m3 > LIMITE_GAS_CRITICO ||
-            water_oil_ratio > LIMITE_WOR_CRITICO ||
-            gas_oil_ratio > LIMITE_GOR_CRITICO
-        );
+        QString motivo_shutdown = "";
+        
+        if (pressao_psi < LIMITE_PRESSAO_CRITICO_MIN) {
+            em_emergencia = true;
+            motivo_shutdown += QString("PRESSÃO CRÍTICA BAIXA: %1 psi < %2 psi; ").arg(pressao_psi, 0, 'f', 1).arg(LIMITE_PRESSAO_CRITICO_MIN);
+        }
+        if (pressao_psi > LIMITE_PRESSAO_CRITICO_MAX) {
+            em_emergencia = true;
+            motivo_shutdown += QString("PRESSÃO CRÍTICA ALTA: %1 psi > %2 psi; ").arg(pressao_psi, 0, 'f', 1).arg(LIMITE_PRESSAO_CRITICO_MAX);
+        }
+        if (viscosidade_oleo_cp > LIMITE_VISCOSIDADE_CRITICO) {
+            em_emergencia = true;
+            motivo_shutdown += QString("VISCOSIDADE CRÍTICA: %1 cp > %2 cp; ").arg(viscosidade_oleo_cp, 0, 'f', 1).arg(LIMITE_VISCOSIDADE_CRITICO);
+        }
+        if (volume_gas_m3 > LIMITE_GAS_CRITICO) {
+            em_emergencia = true;
+            motivo_shutdown += QString("VOLUME DE GÁS CRÍTICO: %1 m³ > %2 m³ (GAS-LOCK!); ").arg(volume_gas_m3, 0, 'f', 0).arg(LIMITE_GAS_CRITICO);
+        }
+        if (water_oil_ratio > LIMITE_WOR_CRITICO) {
+            em_emergencia = true;
+            motivo_shutdown += QString("WOR CRÍTICO: %1% > %2% (BSW alto); ").arg(water_oil_ratio * 100, 0, 'f', 1).arg(LIMITE_WOR_CRITICO * 100);
+        }
+        if (gas_oil_ratio > LIMITE_GOR_CRITICO) {
+            em_emergencia = true;
+            motivo_shutdown += QString("GOR CRÍTICO: %1 scf/bbl > %2 scf/bbl; ").arg(gas_oil_ratio, 0, 'f', 0).arg(LIMITE_GOR_CRITICO);
+        }
+        
+        // Log detalhado apenas quando entra em emergência (não a cada ciclo)
+        if (em_emergencia && !emergencia_anterior) {
+            motivo_emergencia = "🚨 SHUTDOWN AUTOMÁTICO ATIVADO: " + motivo_shutdown;
+        }
     }
 
     // Métodos de Intervenção
@@ -978,7 +1006,7 @@ public:
         impactos na produção e na vida útil do poço.
         
         📈 EXEMPLO REAL:
-        No MLS-3A, reduzir Pwf de 2.000 para 1.900 psi pode:
+        No ATS-7B, reduzir Pwf de 2.000 para 1.900 psi pode:
         • Aumentar vazão em 15%
         • Acelerar water coning em 30%
         • Reduzir vida útil em 2 anos
@@ -987,7 +1015,7 @@ public:
         */
     }
 
-}; // 🏁 FIM DA CLASSE RESERVATORIO - MODELO COMPLETO DO MLS-3A!
+}; // 🏁 FIM DA CLASSE RESERVATORIO - MODELO COMPLETO DO ATS-7B!
 
 /*
 🎓 ================================================================================
@@ -1002,7 +1030,7 @@ PARABÉNS! VOCÊ COMPLETOU O ESTUDO DA CLASSE RESERVATORIO!
 4️⃣ MÉTODOS DE CONTROLE: Injeção, choke, flare
 5️⃣ SISTEMAS DE SEGURANÇA: Limites, shutdown, monitoramento
 
-🏆 DADOS REAIS: Tudo baseado no campo MLS-3A (Marlim Sul)
+🏆 DADOS REAIS: Tudo baseado no campo ATS-7B (Atlântida Oriental)
 🔬 VALIDAÇÃO: 26 anos de dados operacionais
 🎯 APLICABILIDADE: Conhecimento direto da indústria brasileira
 
@@ -1022,7 +1050,7 @@ operacionais do reservatório em um determinado momento no tempo. É equivalente
 aos dados coletados pelos sistemas SCADA em campos reais.
 
 💾 APLICAÇÃO INDUSTRIAL:
-• Sistemas da Petrobras coletam dados a cada 5-15 segundos
+• Sistemas da OceanOil coletam dados a cada 5-15 segundos
 • Permite análise histórica (trending)
 • Base para relatórios de produção
 • Detecção de anomalias operacionais
@@ -1041,6 +1069,11 @@ struct DadosPontos {
     Cada campo representa uma grandeza fundamental na engenharia de reservatórios:
     */
     
+    QString uuid;              // 🔑 Identificador único universal [UUID v4]
+                               //     CONCEITO: Chave primária para streaming/mensageria
+                               //     FORMATO: "550e8400-e29b-41d4-a716-446655440000"
+                               //     USO: Kafka streaming, deduplicação, rastreamento
+    
     double tempo_min;          // ⏱️ Tempo decorrido [minutos]
                                //     CONCEITO: Eixo temporal para análise de tendências
                                //     USO: Gráficos de produção vs tempo
@@ -1049,7 +1082,7 @@ struct DadosPontos {
     double vazao_oleo;         // 🚢 Taxa de produção de óleo [barris/dia]
                                //     CONCEITO: Métrica principal de performance do poço
                                //     IMPORTÂNCIA: Indica a saúde econômica do campo
-                               //     RANGE MLS-3A: 8.000-45.000 bopd (histórico)
+                               //     RANGE ATS-7B: 8.000-45.000 bopd (histórico)
     
     double pressao;            // 🌡️ Pressão do reservatório [psi]
                                //     CONCEITO: Energia que impulsiona a produção
@@ -1069,7 +1102,7 @@ struct DadosPontos {
     double temperatura;        // 🌡️ Temperatura do reservatório [°C]
                                //     CONCEITO: Afeta propriedades PVT dos fluidos
                                //     CONTROLE: Injeção de vapor (EOR - Enhanced Oil Recovery)
-                               //     CONSTANTE: ~92°C no MLS-3A (geotérmica)
+                               //     CONSTANTE: ~92°C no ATS-7B (geotérmica)
     
     double gor;               // ⛽ Gas-Oil Ratio [scf/bbl] (standard cubic feet per barrel)
                               //     CONCEITO: Volume de gás por barril de óleo produzido
@@ -1080,6 +1113,27 @@ struct DadosPontos {
                               //     CONCEITO: Equivale ao BSW (Basic Sediments & Water)
                               //     PROBLEMA: Water coning reduz produção de óleo
                               //     AUMENTO: Natural com a vida do campo
+    
+    // NOVOS CAMPOS PARA RASTREAMENTO DE EVENTOS E ANÁLISE AVANÇADA
+    QString data_hora;        // 📅 Timestamp completo [ISO 8601 format]
+                              //     CONCEITO: Data/hora exata da coleta de dados
+                              //     FORMATO: "2025-08-29T15:30:45"
+                              //     USO: Análise temporal precisa, auditoria
+    
+    QString evento_operador;  // 👨‍💼 Ação do operador [texto descritivo]
+                              //     CONCEITO: Intervenções manuais realizadas
+                              //     EXEMPLOS: "Inj Água 1000bbl", "Vapor 500s", "Manual Stop"
+                              //     USO: Correlacionar ações com resultados
+    
+    QString evento_fisica;    // ⚗️ Evento físico do reservatório [texto descritivo]  
+                              //     CONCEITO: Fenômenos automáticos do sistema
+                              //     EXEMPLOS: "Pressão declínio", "Water coning", "Gas breakthrough"
+                              //     USO: Análise de comportamento natural
+    
+    QString alerta_tipo;      // 🚨 Tipo de alerta ativo [palavra-chave]
+                              //     CONCEITO: Estado de criticidade do sistema
+                              //     VALORES: "NORMAL", "ATENCAO", "CRITICO", "SHUTDOWN"
+                              //     USO: Filtragem rápida, alertas automáticos
     
     /*
     🎯 IMPORTÂNCIA DO DATA LOGGING:
@@ -1109,7 +1163,7 @@ struct DadosPontos {
 📚 CONCEITO EDUCACIONAL:
 Esta classe implementa um sistema de relatórios similar ao usado na indústria
 petrolífera. É equivalente aos relatórios de produção diários/mensais gerados
-pelos sistemas SCADA da Petrobras.
+pelos sistemas SCADA da OceanOil.
 
 🏭 APLICAÇÃO INDUSTRIAL:
 • Relatórios de performance diária de poços
@@ -1126,7 +1180,7 @@ Relatórios estruturados com HTML permitem:
 • Padronização visual
 
 📊 DADOS INCLUÍDOS:
-Todos os parâmetros operacionais críticos do MLS-3A em formato executivo.
+Todos os parâmetros operacionais críticos do ATS-7B em formato executivo.
 
 ================================================================================
 */
@@ -1151,7 +1205,7 @@ public:
     ReportDialog(Reservatorio* reservatorio, const QVector<DadosPontos>& dataPoints, QWidget* parent = nullptr) : QDialog(parent) {
         
         // CONFIGURAÇÃO DA JANELA
-        setWindowTitle("📋 Relatório Operacional MLS-3A - Marlim Sul");
+        setWindowTitle("📋 Relatório Operacional ATS-7B - Atlântida Oriental");
         setMinimumSize(800, 600);  // Tamanho mínimo para visualização adequada
         
         // LAYOUT PRINCIPAL (organização vertical)
@@ -1209,16 +1263,16 @@ private:
     ========================================================================
     
     📚 CONCEITO: Este método transforma dados técnicos em um relatório
-    executivo formatado, similar aos relatórios da Petrobras/ANP.
+    executivo formatado, similar aos relatórios da OceanOil/ANP.
     */
     void generateReports(Reservatorio* reservatorio, const QVector<DadosPontos>& dataPoints) {
         QString reportHtml;
 
         // CABEÇALHO DO RELATÓRIO (HTML estruturado)
         reportHtml += "<div style='text-align: center; margin-bottom: 20px;'>";
-        reportHtml += "<h1 style='color: #0056b3; margin: 0;'>🛢️ PETROBRAS - RELATÓRIO OPERACIONAL</h1>";
-        reportHtml += "<h2 style='color: #0056b3; margin: 5px 0;'>POÇO MLS-3A - CAMPO DE MARLIM SUL</h2>";
-        reportHtml += "<h3 style='color: #666; margin: 5px 0;'>BACIA DE CAMPOS - ÁGUAS PROFUNDAS</h3>";
+        reportHtml += "<h1 style='color: #0056b3; margin: 0;'>🛢️ OCEANOIL - RELATÓRIO OPERACIONAL</h1>";
+        reportHtml += "<h2 style='color: #0056b3; margin: 5px 0;'>POÇO ATS-7B - CAMPO DE ATLÂNTIDA ORIENTAL</h2>";
+        reportHtml += "<h3 style='color: #666; margin: 5px 0;'>BACIA DE ATLÂNTIDA - ÁGUAS PROFUNDAS</h3>";
         reportHtml += "<hr style='border: 2px solid #0056b3; margin: 15px 0;'>";
         reportHtml += "</div>";
 
@@ -1269,12 +1323,50 @@ private:
         reportHtml += QString("<tr><td style='padding: 6px; border: 1px solid #dee2e6;'><b>💧 Volume de Água Total:</b></td><td style='padding: 6px; border: 1px solid #dee2e6;'>%1 bbl</td></tr>").arg(QString::number(reservatorio->volume_agua_bbl, 'f', 0));
         reportHtml += "</table>";
 
+        // SEÇÃO DE EVENTOS CRÍTICOS E HISTÓRICO RECENTE
+        reportHtml += "<h3 style='color:#0056b3; margin-top: 25px;'>📋 EVENTOS CRÍTICOS E INTERVENÇÕES</h3>";
+        
+        // Mostrar últimos 10 eventos do histórico
+        int eventosParaMostrar = std::min(10, dataPoints.size());
+        if (eventosParaMostrar > 0) {
+            reportHtml += "<table style='width: 100%; border-collapse: collapse; font-size: 11px;'>";
+            reportHtml += "<tr style='background-color: #e9ecef;'>";
+            reportHtml += "<th style='padding: 6px; border: 1px solid #dee2e6; text-align: center;'>Tempo</th>";
+            reportHtml += "<th style='padding: 6px; border: 1px solid #dee2e6; text-align: center;'>Evento Operador</th>";
+            reportHtml += "<th style='padding: 6px; border: 1px solid #dee2e6; text-align: center;'>Evento Físico</th>";
+            reportHtml += "<th style='padding: 6px; border: 1px solid #dee2e6; text-align: center;'>Alerta</th>";
+            reportHtml += "</tr>";
+            
+            // Mostrar últimos eventos (em ordem reversa)
+            for (int i = dataPoints.size() - eventosParaMostrar; i < dataPoints.size(); ++i) {
+                const auto& ponto = dataPoints[i];
+                
+                // Apenas mostrar linha se há algum evento significativo
+                if (!ponto.evento_operador.isEmpty() || !ponto.evento_fisica.isEmpty() || ponto.alerta_tipo != "NORMAL") {
+                    QString corFundo = "#ffffff";
+                    if (ponto.alerta_tipo == "SHUTDOWN") corFundo = "#ffebee";
+                    else if (ponto.alerta_tipo == "CRITICO") corFundo = "#fff3e0";
+                    else if (ponto.alerta_tipo == "ATENCAO") corFundo = "#fffde7";
+                    
+                    reportHtml += QString("<tr style='background-color: %1;'>").arg(corFundo);
+                    reportHtml += QString("<td style='padding: 4px; border: 1px solid #dee2e6; text-align: center;'>%1</td>").arg(ponto.data_hora.mid(11,5)); // Apenas HH:MM
+                    reportHtml += QString("<td style='padding: 4px; border: 1px solid #dee2e6;'>%1</td>").arg(ponto.evento_operador.isEmpty() ? "-" : ponto.evento_operador);
+                    reportHtml += QString("<td style='padding: 4px; border: 1px solid #dee2e6;'>%1</td>").arg(ponto.evento_fisica.isEmpty() ? "-" : ponto.evento_fisica);
+                    reportHtml += QString("<td style='padding: 4px; border: 1px solid #dee2e6; text-align: center; font-weight: bold;'>%1</td>").arg(ponto.alerta_tipo);
+                    reportHtml += "</tr>";
+                }
+            }
+            reportHtml += "</table>";
+        } else {
+            reportHtml += "<p style='color: #666; font-style: italic;'>Nenhum evento registrado ainda. O sistema está coletando dados...</p>";
+        }
+
         // RODAPÉ INSTITUCIONAL
         reportHtml += "<div style='margin-top: 30px; padding: 15px; background-color: #f8f9fa; border-left: 4px solid #0056b3;'>";
         reportHtml += "<p style='margin: 0; font-size: 10px; color: #666;'>";
-        reportHtml += "📋 <b>RELATÓRIO GERADO AUTOMATICAMENTE</b> pelo Sistema SCADA MLS-3A<br>";
-        reportHtml += "🏢 <b>PETROBRAS</b> - Petróleo Brasileiro S.A.<br>";
-        reportHtml += "🌊 <b>CAMPO:</b> Marlim Sul • <b>BACIA:</b> Campos • <b>ESTADO:</b> Rio de Janeiro<br>";
+        reportHtml += "📋 <b>RELATÓRIO GERADO AUTOMATICAMENTE</b> pelo Sistema SCADA ATS-7B<br>";
+        reportHtml += "🏢 <b>OCEANOIL</b> - Oceanic Oil Exploration S.A.<br>";
+        reportHtml += "🌊 <b>CAMPO:</b> Atlântida Oriental • <b>BACIA:</b> Atlântida • <b>ESTADO:</b> Rio de Janeiro<br>";
         reportHtml += "⚡ <b>SISTEMA:</b> Qt5 SCADA Educational Simulator v1.0<br>";
         QString timestamp = QDateTime::currentDateTime().toString("dd/MM/yyyy hh:mm:ss");
         reportHtml += QString("🕐 <b>GERADO EM:</b> %1").arg(timestamp);
@@ -1306,7 +1398,7 @@ Esta é a classe principal do simulador, equivalente a uma estação SCADA
 Integra todos os componentes em uma interface profissional.
 
 🏭 SISTEMAS SCADA REAIS:
-• Sala de controle da Petrobras em Macaé (CENPES)  
+• Sala de controle da OceanOil em Macaé (CENPES)  
 • Controle remoto de plataformas offshore
 • Monitoramento 24h/7dias de centenas de poços
 • Integração com sistemas corporativos (SAP, PI System)
@@ -1319,7 +1411,7 @@ Integra todos os componentes em uma interface profissional.
 • Geração automática de relatórios
 
 💻 TECNOLOGIA:
-Qt5 - Mesmo framework usado em sistemas industriais reais da Petrobras.
+Qt5 - Mesmo framework usado em sistemas industriais reais da OceanOil.
 
 ================================================================================
 */
@@ -1338,7 +1430,7 @@ public:
     
     🔄 SEQUÊNCIA DE INICIALIZAÇÃO:
     1. Gerador de números aleatórios (para variações operacionais)
-    2. Modelo físico do reservatório MLS-3A
+    2. Modelo físico do reservatório ATS-7B
     3. Sistema de temporização (5 segundos como sistemas reais)
     4. Interface gráfica (SCADA) 
     5. Sistema de gráficos e visualização
@@ -1355,7 +1447,7 @@ public:
         /*
         🏗️ CRIAÇÃO DOS OBJETOS PRINCIPAIS:
         */
-        // MODELO FÍSICO: Cria instância do reservatório MLS-3A
+        // MODELO FÍSICO: Cria instância do reservatório ATS-7B
         reservatorio = new Reservatorio();  
         
         // TIMER DE SIMULAÇÃO: Controla o passo de tempo da simulação
@@ -1363,6 +1455,12 @@ public:
         
         // CONECTA timer → gameLoop (padrão signal-slot do Qt)
         connect(simulationTimer, &QTimer::timeout, this, &SimuladorWindow::gameLoop);
+        
+        // INICIALIZAR RASTREAMENTO DE EVENTOS
+        ultimoEventoOperador = "";
+        ultimoEventoFisica = ""; // Não registrar evento na inicialização
+        tipoAlertaAtual = "NORMAL";
+        sistemaInicializado = false;
         
         /*
         🎨 INICIALIZAÇÃO DA INTERFACE GRÁFICA:
@@ -1390,9 +1488,9 @@ public:
             📢 MENSAGENS DE BOAS-VINDAS (LOG EDUCACIONAL):
             Informa ao usuário sobre os dados reais utilizados
             */
-            logMessage("🎓 SIMULADOR EDUCACIONAL MLS-3A INICIADO - BEM-VINDO!");
-            logMessage("🏆 Poço: Marlim Sul (Bacia de Campos) - 26 anos de dados reais", "info");
-            logMessage("📈 Parâmetros calibrados com dados da Petrobras/ANP:", "info");
+            logMessage("🎓 SIMULADOR EDUCACIONAL ATS-7B INICIADO - BEM-VINDO!");
+            logMessage("🏆 Poço: Atlântida Oriental (Bacia de Atlântida) - 26 anos de dados reais", "info");
+            logMessage("📈 Parâmetros calibrados com dados da OceanOil/ANP:", "info");
             logMessage("• Pressão: 2.850 psi • Temp: 92°C • API: 29,5° • PI: 8,2 bopd/psi", "info");
             logMessage("• Produção: 22.000 bopd • BSW: 23% • GOR: 420 scf/bbl", "info");  
             logMessage("ℹ️ Timestep: 5s (realismo operacional) • Interface: SCADA Qt5", "info");
@@ -1478,14 +1576,29 @@ private slots:
         // Salvar dados a cada ciclo (representa coleta de dados operacionais)
         // Em um sistema real, isso seria equivalent a dados coletados a cada 5 segundos
         saveDataPoint();
+        
+        // Marcar sistema como inicializado após 10 segundos (2 ciclos)
+        if (!sistemaInicializado && reservatorio->tempo_simulacao_s >= 10.0) {
+            sistemaInicializado = true;
+            logMessage("✅ Sistema totalmente inicializado - Monitoramento ativo", "sistema");
+        }
 
         // Verificar e exibir alertas e sugestões
         if (reservatorio->em_emergencia) {
-            logMessage("ALERTA CRÍTICO: Shutdown Automático!", "critico");
+            tipoAlertaAtual = "SHUTDOWN";
+            // Log detalhado apenas quando há novo motivo
+            if (!reservatorio->motivo_emergencia.isEmpty()) {
+                logMessage(reservatorio->motivo_emergencia, "critico");
+                ultimoEventoFisica = "Shutdown: " + reservatorio->motivo_emergencia.mid(24); // Remove "🚨 SHUTDOWN AUTOMÁTICO ATIVADO: "
+                // ALERTA SONORO CRÍTICO PARA SHUTDOWN AUTOMÁTICO
+                emitirAlertaSonoro("critico");
+                reservatorio->motivo_emergencia = ""; // Limpar para não repetir
+            } else {
+                logMessage("ALERTA CRÍTICO: Shutdown Automático!", "critico");
+            }
             suggestInputWater->setPlaceholderText("Emergência");
             suggestInputGas->setPlaceholderText("Emergência");
             suggestInputVapor->setPlaceholderText("Emergência");
-            suggestInputFlare->setPlaceholderText("Emergência");
             inputTempAgua->setPlaceholderText("Emergência");
             inputDensidadeGas->setPlaceholderText("Emergência");
             suggestionExplanationLabel->setText("O sistema está em estado de emergência e todas as ações foram bloqueadas por segurança. A produção foi interrompida.");
@@ -1523,6 +1636,7 @@ private slots:
             double temp = inputTempAgua->text().toDouble(&ok);
             if (ok) {
                 reservatorio->injetarAgua(volume, temp);
+                ultimoEventoOperador = QString("Inj Água %1bbl %2°C").arg(volume, 0, 'f', 0).arg(temp, 0, 'f', 0);
                 logMessage(QString("Injetando %1 bbl de água a %2°C.").arg(volume).arg(temp), "acao");
             } else {
                 QMessageBox::warning(this, "Erro de Entrada", "Por favor, insira valores numéricos para a injeção de água e temperatura.");
@@ -1532,6 +1646,7 @@ private slots:
             double densidade = inputDensidadeGas->text().toDouble(&ok);
             if (ok) {
                 reservatorio->injetarGas(volume, densidade);
+                ultimoEventoOperador = QString("Inj Gás %1m³ d%2").arg(volume, 0, 'f', 0).arg(densidade, 0, 'f', 1);
                 logMessage(QString("Injetando %1 m³ de gás com densidade de %2.").arg(volume).arg(densidade), "acao");
             } else {
                 QMessageBox::warning(this, "Erro de Entrada", "Por favor, insira valores numéricos para a injeção de gás e densidade.");
@@ -1540,29 +1655,26 @@ private slots:
             double tempo = suggestInputVapor->text().toDouble(&ok);
             if (ok) {
                 reservatorio->injetarVapor(tempo);
+                ultimoEventoOperador = QString("Inj Vapor %1s").arg(tempo, 0, 'f', 0);
                 logMessage(QString("Injetando vapor por %1 segundos.").arg(tempo), "acao");
             } else {
                 QMessageBox::warning(this, "Erro de Entrada", "Por favor, insira um valor numérico para a injeção de vapor.");
             }
-        } else if (buttonName == "flare_btn") {
-            double vazao = suggestInputFlare->text().toDouble(&ok);
-            if (ok) {
-                reservatorio->liberarGasParaQueima(vazao);
-                logMessage(QString("Acionando liberação de gás (flare) com vazão de %1 scfd.").arg(vazao), "acao");
-            } else {
-                QMessageBox::warning(this, "Erro de Entrada", "Por favor, insira um valor numérico para a vazão de liberação de gás.");
-            }
         } else if (buttonName == "abrir_valv_btn") {
             reservatorio->ajustarPressaoPoco(-50.0);
+            ultimoEventoOperador = "Abrir Choke";
             logMessage("Abrindo a válvula de choke. Aumento de vazão esperado.", "acao");
         } else if (buttonName == "fechar_valv_btn") {
             reservatorio->ajustarPressaoPoco(50.0);
+            ultimoEventoOperador = "Fechar Choke";
             logMessage("Fechando a válvula de choke. Redução de vazão esperada.", "acao");
         } else if (buttonName == "parar_prod_btn") {
             isProducing = false;
+            ultimoEventoOperador = "Parar Produção";
             logMessage("Produção interrompida para manutenção.", "critico");
         } else if (buttonName == "iniciar_prod_btn") {
             isProducing = true;
+            ultimoEventoOperador = "Iniciar Produção";
             logMessage("Produção retomada.", "acao");
         }
     }
@@ -1615,7 +1727,7 @@ private slots:
                 explicacao = "Cenários avançados com variações técnicas complexas";
                 break;
             case 3: // Engenheiro Sênior
-                explicacao = "Simulação realista baseada em dados históricos do MLS-3A";
+                explicacao = "Simulação realista baseada em dados históricos do ATS-7B";
                 break;
             case 4: // Analista
                 explicacao = "Reprodução de eventos históricos reais para análise";
@@ -1651,29 +1763,36 @@ private slots:
             return;
         }
 
-        QString fileName = "simulacao_petroleo.csv";
+        // Salvar na pasta raiz do projeto (um nível acima do executável)
+        QString projectRoot = QCoreApplication::applicationDirPath() + "/../simulacao_petroleo.csv";
+        QString fileName = QDir::cleanPath(projectRoot);
         QFile file(fileName);
         if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
             QTextStream out(&file);
-            // Removida a coluna de preço
-            out << "tempo_min,vazao_oleo_bopd,pressao_psi,viscosidade_cp,volume_oleo_bbl,temperatura_C,GOR,WOR\n";
+            // CABEÇALHO CSV COM UUID PARA KAFKA STREAMING E RASTREAMENTO DE EVENTOS
+            out << "uuid,data_hora,tempo_min,vazao_oleo_bopd,pressao_psi,viscosidade_cp,volume_oleo_bbl,temperatura_C,GOR,WOR,evento_operador,evento_fisica,alerta_tipo\n";
             /*
             📊 EXPORTAÇÃO DE DADOS (REFATORADO):
             Uso do método utilitário formatarCampoNumerico() para
             consistência na formatação dos valores exportados
             */
             for (const auto& point : dataPoints) {
-                out << point.tempo_min << ","
+                out << "\"" << point.uuid << "\","
+                    << "\"" << point.data_hora << "\","
+                    << point.tempo_min << ","
                     << formatarCampoNumerico(point.vazao_oleo) << ","
                     << formatarCampoNumerico(point.pressao) << ","
                     << formatarCampoNumerico(point.viscosidade_cp) << ","
                     << formatarCampoNumerico(point.volume_oleo) << ","
                     << formatarCampoNumerico(point.temperatura) << ","
                     << formatarCampoNumerico(point.gor) << ","
-                    << formatarCampoNumerico(point.wor) << "\n";
+                    << formatarCampoNumerico(point.wor) << ","
+                    << "\"" << point.evento_operador << "\","
+                    << "\"" << point.evento_fisica << "\","
+                    << "\"" << point.alerta_tipo << "\"\n";
             }
             file.close();
-            QMessageBox::information(this, "Sucesso", "Arquivo CSV baixado com sucesso!");
+            QMessageBox::information(this, "Sucesso", QString("Arquivo CSV salvo em:\n%1").arg(fileName));
         } else {
             QMessageBox::critical(this, "Erro", "Não foi possível abrir o arquivo para escrita.");
         }
@@ -1805,6 +1924,17 @@ private:
     QComboBox* periodoSelector;             // Seletor de período na interface
     QComboBox* perfilSelector;              // 🎮 Seletor de perfil de simulação
 
+    // 🎓 Sistema Educacional de Diagnóstico Inteligente
+    QWidget* diagnosticoWidget;             // Widget principal do sistema educacional
+    QLabel* diagnosticoTituloLabel;         // Título do diagnóstico atual
+    QString diagnosticoAtual;               // Tipo de diagnóstico ativo
+
+    // RASTREAMENTO DE EVENTOS PARA ANÁLISE DE DADOS
+    QString ultimoEventoOperador;           // Última ação do operador registrada
+    QString ultimoEventoFisica;             // Último evento físico detectado
+    QString tipoAlertaAtual;                // Tipo de alerta atual do sistema
+    bool sistemaInicializado;               // Flag para evitar alertas durante inicialização
+
     // Elementos da interface
     QVector<QLabel*> indicatorLabels;
     QTextEdit* logTextEdit;
@@ -1813,7 +1943,6 @@ private:
     QLineEdit* suggestInputGas;
     QLineEdit* inputDensidadeGas;
     QLineEdit* suggestInputVapor;
-    QLineEdit* suggestInputFlare;
     QLabel* suggestionExplanationLabel;
 
     // Gráficos
@@ -1852,7 +1981,7 @@ private:
     }
 
     void setupUI() {
-        setWindowTitle("Simulador MLS-3A - Poço Marlim Sul (Bacia de Campos)");
+        setWindowTitle("Simulador ATS-7B - Poço Atlântida Oriental (Bacia de Atlântida)");
         setMinimumSize(1400, 900);
 
         // Widget principal com scroll
@@ -1913,11 +2042,65 @@ private:
 
         // Seção de Ícones SCADA em GroupBox
         QGroupBox* scadaGroupBox = new QGroupBox("Monitor SCADA - Status em Tempo Real");
-        QHBoxLayout* scadaIconsLayout = new QHBoxLayout(scadaGroupBox);
+        QHBoxLayout* scadaMainLayout = new QHBoxLayout(scadaGroupBox);
+        scadaMainLayout->setSpacing(20);
+        
+        // Container do Logo - alinhado à esquerda
+        QWidget* logoContainer = new QWidget();
+        logoContainer->setFixedSize(350, 80);
+        QHBoxLayout* logoLayout = new QHBoxLayout(logoContainer);
+        logoLayout->setContentsMargins(10, 5, 10, 5);
+        logoLayout->setSpacing(15);
+        
+        // Logo/Ícone 
+        QLabel* logoIcon = new QLabel("🛢️");
+        logoIcon->setAlignment(Qt::AlignCenter);
+        logoIcon->setFixedSize(60, 60);
+        logoIcon->setStyleSheet(
+            "QLabel { "
+                "font-size: 36px; "
+                "background-color: #1a1a1a; "
+                "border: 2px solid #ff6b35; "
+                "border-radius: 30px; "
+                "padding: 5px; "
+            "}"
+        );
+        
+        // Texto "Aggressive Oil Club"
+        QLabel* clubText = new QLabel("AGGRESSIVE OIL CLUB");
+        clubText->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+        clubText->setStyleSheet(
+            "QLabel { "
+                "color: #ff6b35; "
+                "font-size: 16px; "
+                "font-weight: bold; "
+                "font-family: 'Arial Black', Arial, sans-serif; "
+                "letter-spacing: 2px; "
+                "background-color: transparent; "
+            "}"
+        );
+        
+        logoLayout->addWidget(logoIcon);
+        logoLayout->addWidget(clubText);
+        logoLayout->addStretch();
+        
+        // Estilo do container
+        logoContainer->setStyleSheet(
+            "QWidget { "
+                "background-color: #2a2a2a; "
+                "border: 1px solid #444444; "
+                "border-radius: 8px; "
+            "}"
+        );
+        
+        scadaMainLayout->addWidget(logoContainer);
+        
+        // Layout para os ícones SCADA centralizados
+        QHBoxLayout* scadaIconsLayout = new QHBoxLayout();
         scadaIconsLayout->setAlignment(Qt::AlignCenter);
         scadaIconsLayout->setSpacing(30);
 
-        // Criação dos ícones SCADA com estilo melhorado
+        // Criação dos ícones SCADA com estilo melhorado (formato original)
         auto createScadaIcon = [this, scadaIconsLayout](const QString& name, const QString& tooltip) -> QLabel* {
             QVBoxLayout* iconLayout = new QVBoxLayout();
             QLabel* iconLabel = new QLabel();
@@ -1946,6 +2129,7 @@ private:
         gorIconLabel = createScadaIcon("GOR", "Status do Gás-Óleo Ratio");
         statusIconLabel = createScadaIcon("Sistema", "Status Geral do Sistema");
 
+        scadaMainLayout->addLayout(scadaIconsLayout);
         mainLayout->addWidget(scadaGroupBox);
 
         // Seção de Indicadores Principais em Grid
@@ -2323,57 +2507,12 @@ private:
         QWidget* waterControl = createInterventionControl("Injeção de Água", "Volume (bbl)", "1000", "Temp (°C)", "100");
         QWidget* gasControl = createInterventionControl("Injeção de Gás", "Volume (m³)", "5000", "Densidade", "0.7");
         QWidget* vaporControl = createInterventionControl("Injeção de Vapor", "Tempo (s)", "500");
-        /*
-        🔥 ====================================================================
-        TERMINOLOGIA HÍBRIDA: EDUCACIONAL + TÉCNICA
-        ====================================================================
         
-        📚 ABORDAGEM EDUCACIONAL IMPLEMENTADA:
-        "Liberação de Gás (Flare)" - Combina clareza didática com precisão técnica
-        
-        • DIDÁTICO PRIMEIRO: "Liberação de Gás" explica a FUNÇÃO
-        • TÉCNICO ENTRE PARÊNTESES: "(Flare)" ensina o TERMO INDUSTRIAL
-        • PROGRESSÃO NATURAL: Função → Terminologia técnica
-        
-        🏭 BENEFÍCIO EDUCACIONAL:
-        Estudantes entendem o propósito antes de aprender o jargão técnico,
-        preparando-os adequadamente para a realidade industrial.
-        */
-        QWidget* flareControl = createInterventionControl("Liberação de Gás (Flare)", "Vazão (scfd)", "5000");
-        
-        /*
-        💡 ====================================================================
-        TOOLTIP EDUCACIONAL: SISTEMA DE LIBERAÇÃO DE GÁS (FLARE)
-        ====================================================================
-        
-        📚 EXPLICAÇÃO TÉCNICA PARA ESTUDANTES:
-        Adicionando tooltip com explicação completa do sistema flare para
-        contexto educacional, conectando função à terminologia industrial.
-        */
-        flareControl->setToolTip(
-            "🔥 LIBERAÇÃO DE GÁS (FLARE) - SISTEMA DE SEGURANÇA\n\n"
-            "📚 FUNÇÃO:\n"
-            "• Queima controlada de gases excedentes\n"
-            "• Sistema de alívio de pressão por segurança\n"
-            "• Controle de emissões (melhor queimar que liberar metano)\n\n"
-            "🛢️ APLICAÇÃO NO MLS-3A:\n"
-            "• Remove gás livre em excesso do sistema\n"
-            "• Previne acúmulo perigoso de gases\n"
-            "• Mantém eficiência das bombas (evita gas-lock)\n\n"
-            "⚡ OPERAÇÃO:\n"
-            "• Vazão típica: 5.000-15.000 scfd\n"
-            "• Acionamento automático por alta pressão\n"
-            "• Monitoramento contínuo de emissões\n\n"
-            "🏭 REALIDADE INDUSTRIAL:\n"
-            "Presente em todas as plataformas offshore da Petrobras.\n"
-            "A 'tocha' visível nas plataformas é exatamente este sistema!"
-        );
         
         // Posicionar controles em grid 2x2
         interventionGrid->addWidget(waterControl, 0, 0);
         interventionGrid->addWidget(gasControl, 0, 1);
         interventionGrid->addWidget(vaporControl, 1, 0);
-        interventionGrid->addWidget(flareControl, 1, 1);
         
         // Recuperar referências dos inputs
         suggestInputWater = qobject_cast<QLineEdit*>(waterControl->property("input1").value<QObject*>());
@@ -2390,9 +2529,6 @@ private:
         QPushButton* vaporBtn = qobject_cast<QPushButton*>(vaporControl->property("button").value<QObject*>());
         vaporBtn->setObjectName("inj_vapor_btn");
         
-        suggestInputFlare = qobject_cast<QLineEdit*>(flareControl->property("input1").value<QObject*>());
-        QPushButton* flareBtn = qobject_cast<QPushButton*>(flareControl->property("button").value<QObject*>());
-        flareBtn->setObjectName("flare_btn");
 
         controlsLayout->addWidget(interventionGroupBox, 2);
         
@@ -2471,11 +2607,14 @@ suggestionExplanationLabel = new QLabel("🎓 SISTEMA DE ENSINO INTELIGENTE:\n\n
         controlsLayout->addLayout(rightControlsLayout, 1);
         mainLayout->addLayout(controlsLayout);
 
+        // 🎓 Sistema Educacional de Diagnóstico
+        QWidget* sistemaEducacional = criarSistemaEducacional();
+        mainLayout->addWidget(sistemaEducacional);
+
         // Conecta os botões aos slots
         connect(waterBtn, &QPushButton::clicked, this, &SimuladorWindow::onActionButtonClicked);
         connect(gasBtn, &QPushButton::clicked, this, &SimuladorWindow::onActionButtonClicked);
         connect(vaporBtn, &QPushButton::clicked, this, &SimuladorWindow::onActionButtonClicked);
-        connect(flareBtn, &QPushButton::clicked, this, &SimuladorWindow::onActionButtonClicked);
         connect(startBtn, &QPushButton::clicked, this, &SimuladorWindow::onActionButtonClicked);
         connect(stopBtn, &QPushButton::clicked, this, &SimuladorWindow::onActionButtonClicked);
         connect(openValveBtn, &QPushButton::clicked, this, &SimuladorWindow::onActionButtonClicked);
@@ -2523,7 +2662,7 @@ suggestionExplanationLabel = new QLabel("🎓 SISTEMA DE ENSINO INTELIGENTE:\n\n
     no título, resolvendo problema de invisibilidade dos pontos.
     
     📏 RANGES INDUSTRIAIS CALIBRADOS:
-    Baseados nos valores reais do MLS-3A para visualização adequada.
+    Baseados nos valores reais do ATS-7B para visualização adequada.
     */
     QChartView* createChart(const QString& title, QLineSeries* series) {
         /*
@@ -2551,7 +2690,7 @@ suggestionExplanationLabel = new QLabel("🎓 SISTEMA DE ENSINO INTELIGENTE:\n\n
         /*
         📊 CONFIGURAÇÃO DO EIXO Y (VALOR) - COM RANGES CALIBRADOS:
         Representa o valor da variável sendo medida (pressão, vazão, etc.)
-        Ranges baseados nos valores reais do MLS-3A para visualização adequada
+        Ranges baseados nos valores reais do ATS-7B para visualização adequada
         */
         QValueAxis *axisY = new QValueAxis();
         
@@ -2677,6 +2816,906 @@ suggestionExplanationLabel = new QLabel("🎓 SISTEMA DE ENSINO INTELIGENTE:\n\n
         Uso do sistema de periodicidade configurável para análise adaptável
         */
         atualizarGraficosSeNecessario(false);
+        
+        // 🎓 Atualizar sistema educacional de diagnóstico
+        atualizarDiagnosticoEducacional();
+    }
+
+    /*
+    🎓 ========================================================================
+    SISTEMA EDUCACIONAL DE DIAGNÓSTICO INTELIGENTE
+    ========================================================================
+    
+    📚 CONCEITO: Sistema que ensina estudantes a identificar problemas
+    operacionais e aplicar as intervenções corretas no momento adequado.
+    
+    🎯 FUNCIONALIDADES:
+    • Detecção automática de cenários críticos
+    • Explicações técnicas detalhadas  
+    • Orientações passo-a-passo para intervenções
+    • Valores específicos recomendados
+    • Botão de aplicação automática para aprendizado
+    */
+    QWidget* criarSistemaEducacional() {
+        diagnosticoWidget = new QWidget();
+        diagnosticoWidget->setStyleSheet(R"(
+            QWidget {
+                background-color: black;
+                border: 2px solid #007bff;
+                border-radius: 8px;
+                margin: 5px;
+            }
+            QLabel {
+                padding: 8px;
+                font-weight: bold;
+                color: white;
+            }
+            QTextEdit {
+                background-color: white;
+                border: 1px solid #dee2e6;
+                border-radius: 4px;
+                padding: 8px;
+                font-family: 'Consolas', monospace;
+            }
+            QPushButton {
+                background-color: #28a745;
+                color: white;
+                font-weight: bold;
+                padding: 10px 20px;
+                border-radius: 4px;
+                border: none;
+            }
+            QPushButton:hover {
+                background-color: #218838;
+            }
+        )");
+
+        QVBoxLayout* layout = new QVBoxLayout(diagnosticoWidget);
+
+        // Título principal
+        diagnosticoTituloLabel = new QLabel("🎓 SISTEMA EDUCACIONAL - DIAGNÓSTICO OPERACIONAL");
+        diagnosticoTituloLabel->setAlignment(Qt::AlignCenter);
+        diagnosticoTituloLabel->setStyleSheet("font-size: 16px; color: #007bff; background-color: white; border: 1px solid #007bff; border-radius: 4px;");
+        layout->addWidget(diagnosticoTituloLabel);
+
+
+
+
+        // Botão de ação alinhado à esquerda
+        QHBoxLayout* botoesLayout = new QHBoxLayout();
+        
+        QPushButton* todosPopsBtn = new QPushButton("📚 MANUAL COMPLETO");
+        todosPopsBtn->setStyleSheet("background-color: #17a2b8; color: white; font-weight: bold; padding: 10px; border-radius: 4px; border: none; font-size: 12px;");
+        todosPopsBtn->setFixedWidth(360);
+        connect(todosPopsBtn, &QPushButton::clicked, this, &SimuladorWindow::mostrarTodosProcedimentos);
+        
+        botoesLayout->addWidget(todosPopsBtn);
+        botoesLayout->addStretch(); // Adiciona espaço flexível à direita para alinhar à esquerda
+        
+        layout->addLayout(botoesLayout);
+
+        return diagnosticoWidget;
+    }
+
+    /*
+    ⚙️ ========================================================================
+    SISTEMA DE PROCEDIMENTOS OPERACIONAIS PADRÃO (POP)
+    ========================================================================
+    
+    🎓 CONCEITO: Para cada problema operacional, gera uma explicação completa
+    seguindo padrões da indústria petrolífera com:
+    • Diagnóstico situacional (fenômeno)
+    • Análise de causa raiz (origem técnica)  
+    • Projeção de consequências (análise de risco)
+    • Procedimento de intervenção (SOP - Standard Operating Procedure)
+    • Fundamentação técnica (base científica)
+    */
+    QString gerarProcedimentoOperacional(QString tipoProblema) {
+        QString procedimento = "";
+        
+        if (tipoProblema == "pressao_baixa") {
+            procedimento = "⚙️ POP-001: RECUPERAÇÃO DE PRESSÃO DO RESERVATÓRIO\n\n";
+            
+            procedimento += "🔍 DIAGNÓSTICO SITUACIONAL:\n";
+            procedimento += "• Pressão atual: " + QString::number(reservatorio->pressao_psi, 'f', 0) + " psi (abaixo de 2.500 psi)\n";
+            procedimento += "• Status: Depleção crítica de energia do reservatório\n";
+            procedimento += "• Analogia: Sistema perdendo 'força motriz' natural\n\n";
+            
+            procedimento += "📋 ANÁLISE DE CAUSA RAIZ:\n";
+            procedimento += "• Produção contínua sem reposição de energia\n";
+            procedimento += "• Cada barril extraído reduz pressão interna\n";
+            procedimento += "• Lei física: Volume ↓ = Pressão ↓\n";
+            procedimento += "• Depleção natural progressiva do reservatório\n\n";
+            
+            procedimento += "⚠️ PROJEÇÃO DE CONSEQUÊNCIAS:\n";
+            procedimento += "• CRÍTICO: Vazão em declínio acelerado\n";
+            procedimento += "• PRAZO: Parada total em 30-60 minutos\n";
+            procedimento += "• ECONÔMICO: Inviabilidade operacional\n";
+            procedimento += "• TÉCNICO: Recuperação mais difícil se atrasar\n\n";
+            
+            procedimento += "🛠️ PROCEDIMENTO DE INTERVENÇÃO (SOP-001):\n";
+            double volumeRec = std::max(15000.0, reservatorio->vazao_oleo_bopd * 1.2);
+            procedimento += "PASSO 1: Localize 'Injeção de Água (bbl/dia)' nos controles\n";
+            procedimento += "PASSO 2: Digite exatamente " + QString::number(volumeRec, 'f', 0) + " (volume calculado)\n";
+            procedimento += "PASSO 3: Configure temperatura para 60°C (otimiza viscosidade)\n";
+            procedimento += "PASSO 4: Clique 'Iniciar Injeção de Água'\n";
+            procedimento += "PASSO 5: Observe gráfico de pressão nos próximos 5-10 minutos\n";
+            procedimento += "PASSO 6: Pressão deve subir gradualmente (sinal de sucesso)\n";
+            procedimento += "PASSO 7: Vazão de óleo deve aumentar consequentemente\n\n";
+            
+            procedimento += "🔬 FUNDAMENTAÇÃO TÉCNICA:\n";
+            procedimento += "• Água injetada: Sistema de pressure maintenance\n";
+            procedimento += "• Mecanismo: Empuxe hidráulico direcionado ao poço\n";
+            procedimento += "• Física: Mantém gradiente de pressão (ΔP)\n";
+            procedimento += "• Padrão global: Waterflooding secundário\n";
+            procedimento += "• T° 60°C: Redução da viscosidade µ do óleo\n";
+            procedimento += "• Volume: 1.2x produção (regra API/SPE)";
+            
+        } else if (tipoProblema == "gor_elevado") {
+            procedimento = "⚙️ POP-002: CONTROLE DE GAS-OIL RATIO (GOR)\n\n";
+            
+            procedimento += "🔍 O QUE ESTÁ ACONTECENDO:\n";
+            procedimento += "• GOR atual: " + QString::number(reservatorio->gas_oil_ratio, 'f', 0) + " scf/bbl (acima de 2.500)\n";
+            procedimento += "• Muito gás saindo junto com o óleo\n";
+            procedimento += "• É como abrir um refrigerante quente - gás se liberta\n\n";
+            
+            procedimento += "❓ POR QUE ACONTECEU:\n";
+            procedimento += "• Pressão caiu abaixo do 'ponto de bolha' (~2.800 psi)\n";
+            procedimento += "• Gás dissolvido no óleo começou a se separar\n";
+            procedimento += "• Como bolhas numa bebida gasosa aquecida\n";
+            procedimento += "• Fenômeno natural quando pressão diminui\n\n";
+            
+            procedimento += "⚠️ O QUE VAI ACONTECER SE NÃO INTERVIR:\n";
+            procedimento += "• Eficiência de produção vai piorar continuamente\n";
+            procedimento += "• Gás livre ocupa espaço que deveria ser do óleo\n";
+            procedimento += "• Viscosidade do óleo aumenta (sem gás dissolvido)\n";
+            procedimento += "• Equipamentos podem ter problemas com excesso de gás\n\n";
+            
+            procedimento += "🛠️ PASSO-A-PASSO DA INTERVENÇÃO:\n";
+            double gasRec = std::min(8.0, reservatorio->gas_oil_ratio / 400.0);
+            procedimento += "PASSO 1: Localize 'Injeção de Gás (Mm³/dia)' nos controles\n";
+            procedimento += "PASSO 2: Digite " + QString::number(gasRec, 'f', 1) + " Mm³/dia (calculado pela fórmula)\n";
+            procedimento += "PASSO 3: Configure densidade para 0.8 kg/m³ (gás padrão)\n";
+            procedimento += "PASSO 4: Clique 'Iniciar Injeção de Gás'\n";
+            procedimento += "PASSO 5: Monitore GOR - deve diminuir em 15-20 minutos\n";
+            procedimento += "PASSO 6: Observe estabilização da pressão do reservatório\n";
+            procedimento += "PASSO 7: Produção deve se tornar mais eficiente\n\n";
+            
+            procedimento += "🎓 TEORIA - POR QUE FUNCIONA:\n";
+            procedimento += "• Gás injetado reestabelece pressão acima do ponto de bolha\n";
+            procedimento += "• Força o gás livre a se redissolver no óleo\n";
+            procedimento += "• Restaura viscosidade ideal do óleo\n";
+            procedimento += "• Técnica: gas lift ou pressure maintenance\n";
+            procedimento += "• Densidade 0.8: otimizada para miscibilidade\n";
+            procedimento += "• Fórmula volume: GOR/400 (regra da indústria)";
+            
+        } else if (tipoProblema == "excesso_gas") {
+            procedimento = "📋 RECEITA: CONTROLE DE EXCESSO DE GÁS (FLARE)\n\n";
+            
+            procedimento += "🔍 O QUE ESTÁ ACONTECENDO:\n";
+            procedimento += "• Volume de gás: " + QString::number(reservatorio->volume_gas_m3, 'f', 0) + " m³ (acima de 8.000 m³)\n";
+            procedimento += "• Gás acumulando mais rápido que pode ser processado\n";
+            procedimento += "• Como encher um balão além da capacidade\n\n";
+            
+            procedimento += "❓ POR QUE ACONTECEU:\n";
+            procedimento += "• Produção de gás excedeu capacidade de processamento\n";
+            procedimento += "• Podem ter falhas nos equipamentos de gás\n";
+            procedimento += "• GOR alto gerou mais gás que o esperado\n";
+            procedimento += "• Sistema não consegue escoar o volume produzido\n\n";
+            
+            procedimento += "⚠️ O QUE VAI ACONTECER SE NÃO INTERVIR:\n";
+            procedimento += "• RISCO DE SEGURANÇA: sobrepressão perigosa\n";
+            procedimento += "• Pode causar parada de emergência automática\n";
+            procedimento += "• Equipamentos podem sofrer danos\n";
+            procedimento += "• Em casos extremos: vazamentos ou explosão\n\n";
+            
+            procedimento += "🛠️ PASSO-A-PASSO DA INTERVENÇÃO:\n";
+            double flareRec = reservatorio->volume_gas_m3 * 0.3;
+            procedimento += "PASSO 1: URGENTE - Localize 'Liberação de Gás - Flare (m³/dia)'\n";
+            procedimento += "PASSO 2: Digite " + QString::number(flareRec, 'f', 0) + " m³/dia (30% do volume atual)\n";
+            procedimento += "PASSO 3: Clique 'Ativar Flare' IMEDIATAMENTE\n";
+            procedimento += "PASSO 4: Observe volume de gás diminuir rapidamente\n";
+            procedimento += "PASSO 5: Mantenha flare até volume < 6.000 m³\n";
+            procedimento += "PASSO 6: Investigue causa raiz do excesso de gás\n";
+            procedimento += "PASSO 7: Ajuste produção se necessário\n\n";
+            
+            procedimento += "🎓 TEORIA - POR QUE FUNCIONA:\n";
+            procedimento += "• Flare = queima controlada e segura do excesso\n";
+            procedimento += "• Remove gás do sistema sem criar riscos\n";
+            procedimento += "• Alivia pressão instantaneamente\n";
+            procedimento += "• Procedimento de segurança padrão mundial\n";
+            procedimento += "• 30% é taxa segura para não desestabilizar sistema\n";
+            procedimento += "• Queima a alta temperatura: destrói gases tóxicos";
+            
+        } else if (tipoProblema == "producao_baixa") {
+            procedimento = "📋 RECEITA: OTIMIZAÇÃO DE PRODUÇÃO SUBÓTIMA\n\n";
+            
+            procedimento += "🔍 O QUE ESTÁ ACONTECENDO:\n";
+            procedimento += "• Vazão: " + QString::number(reservatorio->vazao_oleo_bopd, 'f', 0) + " bopd (abaixo de 12.000)\n";
+            procedimento += "• Pressão OK: " + QString::number(reservatorio->pressao_psi, 'f', 0) + " psi (adequada)\n";
+            procedimento += "• Poço não está produzindo seu potencial máximo\n\n";
+            
+            procedimento += "❓ POR QUE ACONTECEU (MÚLTIPLAS CAUSAS):\n";
+            procedimento += "• Viscosidade alta do óleo (baixa temperatura)\n";
+            procedimento += "• Dano na formação (plugging de poros)\n";
+            procedimento += "• WOR alto (muita água junto)\n";
+            procedimento += "• Choke muito fechado\n";
+            procedimento += "• Coning de água ou gás no poço\n\n";
+            
+            procedimento += "⚠️ O QUE VAI ACONTECER SE NÃO INTERVIR:\n";
+            procedimento += "• Perda de receita: produção abaixo do potencial\n";
+            procedimento += "• Reservatório pode se deteriorar com tempo\n";
+            procedimento += "• Competitividade econômica reduzida\n";
+            procedimento += "• Pode evoluir para outros problemas\n\n";
+            
+            procedimento += "🛠️ PASSO-A-PASSO DA INVESTIGAÇÃO:\n";
+            procedimento += "PASSO 1: Analise gráficos - quando começou a declinar?\n";
+            procedimento += "PASSO 2: Verifique WOR - se > 2.0, problema é água\n";
+            procedimento += "PASSO 3: Cheque viscosidade vs temperatura\n";
+            procedimento += "PASSO 4: Se T° < 80°C, considere aquecimento\n";
+            procedimento += "PASSO 5: Teste injeção leve de água (5.000 bbl/dia)\n";
+            procedimento += "PASSO 6: Monitore resposta por 30 minutos\n";
+            procedimento += "PASSO 7: Se não melhorar, considere vapor ou choke\n\n";
+            
+            procedimento += "🎓 TEORIA - DIAGNÓSTICO DIFERENCIAL:\n";
+            procedimento += "• Pressão OK + produção baixa = problema no poço\n";
+            procedimento += "• Não é energia do reservatório (pressure drive)\n";
+            procedimento += "• Foco: produtividade e fluxo no near-wellbore\n";
+            procedimento += "• Viscosidade inversamente proporcional à T°\n";
+            procedimento += "• WOR alto indica breakthrough de água\n";
+            procedimento += "• Injeção teste: diagnóstica sweep efficiency";
+            
+        } else if (tipoProblema == "wor_elevado") {
+            procedimento = "📋 RECEITA: CONTROLE DE WATER-OIL RATIO (WOR)\n\n";
+            
+            procedimento += "🔍 O QUE ESTÁ ACONTECENDO:\n";
+            procedimento += "• WOR atual: " + QString::number(reservatorio->water_oil_ratio, 'f', 2) + " (acima de 2.0)\n";
+            procedimento += "• Muita água sendo produzida junto com óleo\n";
+            procedimento += "• É como sugar um milkshake com muito gelo derretido\n\n";
+            
+            procedimento += "❓ POR QUE ACONTECEU:\n";
+            procedimento += "• Coning de água severo: água 'subiu' até o poço\n";
+            procedimento += "• Drawdown muito alto (poço 'puxando' água)\n";
+            procedimento += "• Permeabilidade da água maior que do óleo\n";
+            procedimento += "• Heterogeneidade do reservatório\n\n";
+            
+            procedimento += "⚠️ O QUE VAI ACONTECER SE NÃO INTERVIR:\n";
+            procedimento += "• Custo de separação água/óleo aumenta\n";
+            procedimento += "• Receita líquida diminui drasticamente\n";
+            procedimento += "• Pode inviabilizar economicamente o poço\n";
+            procedimento += "• Problemas ambientais com descarte de água\n\n";
+            
+            procedimento += "🛠️ PASSO-A-PASSO DA INTERVENÇÃO:\n";
+            procedimento += "PASSO 1: Reduza drawdown - 'Fechar Válvula de Choke'\n";
+            procedimento += "PASSO 2: Monitore WOR por 20-30 minutos\n";
+            procedimento += "PASSO 3: Se não melhorar, considere injeção de vapor\n";
+            procedimento += "PASSO 4: Configure vapor por 300 segundos\n";
+            procedimento += "PASSO 5: Vapor reduz viscosidade - facilita separação\n";
+            procedimento += "PASSO 6: Avalie viabilidade econômica contínua\n";
+            procedimento += "PASSO 7: Se WOR não diminuir, poço pode precisar workover\n\n";
+            
+            procedimento += "🎓 TEORIA - POR QUE FUNCIONA:\n";
+            procedimento += "• Menos drawdown = menos 'sucção' de água\n";
+            procedimento += "• Vapor aquece: reduz viscosidade relativa óleo/água\n";
+            procedimento += "• Água tem mobilidade maior em T° baixa\n";
+            procedimento += "• Controle de coning é arte + ciência\n";
+            procedimento += "• WOR econômico varia: ~2.0 para Brent, ~5.0 para heavy\n";
+            procedimento += "• Workover = intervenção física no poço";
+        }
+        
+        return procedimento;
+    }
+
+    void mostrarTodosProcedimentos() {
+        QDialog* popsDialog = new QDialog(this);
+        popsDialog->setWindowTitle("📚 MANUAL DE PROCEDIMENTOS OPERACIONAIS PADRÃO");
+        popsDialog->resize(900, 700);
+        
+        QVBoxLayout* layout = new QVBoxLayout(popsDialog);
+        
+        QLabel* titulo = new QLabel("🎓 MANUAL DO OPERADOR - POPs INDUSTRIAIS");
+        titulo->setAlignment(Qt::AlignCenter);
+        titulo->setStyleSheet("font-size: 18px; font-weight: bold; color: #007bff; background-color: white; border: 2px solid #007bff; border-radius: 6px; padding: 10px; margin: 5px;");
+        layout->addWidget(titulo);
+        
+        QTabWidget* abas = new QTabWidget();
+        abas->setStyleSheet("QTabWidget::pane { border: 1px solid #dee2e6; } QTabBar::tab { padding: 8px 16px; margin-right: 2px; } QTabBar::tab:selected { background-color: #007bff; color: white; }");
+        
+        // Aba 1: Pressão Baixa
+        QWidget* pressaoTabWidget = new QWidget();
+        QVBoxLayout* pressaoTabLayout = new QVBoxLayout(pressaoTabWidget);
+        
+        QTextEdit* popPressao = new QTextEdit();
+        popPressao->setReadOnly(true);
+        popPressao->setText(gerarProcedimentoOperacional("pressao_baixa"));
+        popPressao->setStyleSheet("font-family: 'Consolas', monospace; background-color: white; color: black;");
+        pressaoTabLayout->addWidget(popPressao);
+        
+        // Adicionar botão aplicar solução
+        QPushButton* aplicarPressaoBtn = new QPushButton("🤖 APLICAR SOLUÇÃO PARA PRESSÃO CRÍTICA");
+        aplicarPressaoBtn->setStyleSheet("background-color: #28a745; color: white; font-weight: bold; padding: 10px; border-radius: 4px; border: none; font-size: 12px; margin: 10px;");
+        connect(aplicarPressaoBtn, &QPushButton::clicked, [this, popsDialog]() {
+            if (diagnosticoAtual == "pressao_baixa") {
+                aplicarSolucaoAutomatica();
+                popsDialog->accept();
+            } else {
+                QMessageBox::information(this, "Informação", "Esta solução só pode ser aplicada quando o sistema detectar pressão crítica.");
+            }
+        });
+        pressaoTabLayout->addWidget(aplicarPressaoBtn);
+        
+        abas->addTab(pressaoTabWidget, "🔴 Pressão Crítica");
+        
+        // Aba 2: GOR Elevado  
+        QWidget* gorTabWidget = new QWidget();
+        QVBoxLayout* gorTabLayout = new QVBoxLayout(gorTabWidget);
+        
+        QTextEdit* receitaGor = new QTextEdit();
+        receitaGor->setReadOnly(true);
+        receitaGor->setText(gerarProcedimentoOperacional("gor_elevado"));
+        receitaGor->setStyleSheet("font-family: 'Consolas', monospace; background-color: white; color: black;");
+        gorTabLayout->addWidget(receitaGor);
+        
+        // Adicionar botão aplicar solução
+        QPushButton* aplicarGorBtn = new QPushButton("🤖 APLICAR SOLUÇÃO PARA GOR ELEVADO");
+        aplicarGorBtn->setStyleSheet("background-color: #28a745; color: white; font-weight: bold; padding: 10px; border-radius: 4px; border: none; font-size: 12px; margin: 10px;");
+        connect(aplicarGorBtn, &QPushButton::clicked, [this, popsDialog]() {
+            if (diagnosticoAtual == "gor_elevado") {
+                aplicarSolucaoAutomatica();
+                popsDialog->accept();
+            } else {
+                QMessageBox::information(this, "Informação", "Esta solução só pode ser aplicada quando o sistema detectar GOR elevado.");
+            }
+        });
+        gorTabLayout->addWidget(aplicarGorBtn);
+        
+        abas->addTab(gorTabWidget, "🟠 GOR Elevado");
+        
+        // Aba 3: Excesso de Gás
+        QWidget* gasTabWidget = new QWidget();
+        QVBoxLayout* gasTabLayout = new QVBoxLayout(gasTabWidget);
+        
+        QTextEdit* receitaGas = new QTextEdit();
+        receitaGas->setReadOnly(true);
+        receitaGas->setText(gerarProcedimentoOperacional("excesso_gas"));
+        receitaGas->setStyleSheet("font-family: 'Consolas', monospace; background-color: white; color: black;");
+        gasTabLayout->addWidget(receitaGas);
+        
+        // Adicionar botão aplicar solução
+        QPushButton* aplicarGasBtn = new QPushButton("🤖 APLICAR SOLUÇÃO PARA EXCESSO DE GÁS");
+        aplicarGasBtn->setStyleSheet("background-color: #28a745; color: white; font-weight: bold; padding: 10px; border-radius: 4px; border: none; font-size: 12px; margin: 10px;");
+        connect(aplicarGasBtn, &QPushButton::clicked, [this, popsDialog]() {
+            if (diagnosticoAtual == "excesso_gas") {
+                aplicarSolucaoAutomatica();
+                popsDialog->accept();
+            } else {
+                QMessageBox::information(this, "Informação", "Esta solução só pode ser aplicada quando o sistema detectar excesso de gás.");
+            }
+        });
+        gasTabLayout->addWidget(aplicarGasBtn);
+        
+        abas->addTab(gasTabWidget, "🟡 Excesso Gás");
+        
+        // Aba 4: Produção Baixa
+        QWidget* producaoTabWidget = new QWidget();
+        QVBoxLayout* producaoTabLayout = new QVBoxLayout(producaoTabWidget);
+        
+        QTextEdit* receitaProducao = new QTextEdit();
+        receitaProducao->setReadOnly(true);
+        receitaProducao->setText(gerarProcedimentoOperacional("producao_baixa"));
+        receitaProducao->setStyleSheet("font-family: 'Consolas', monospace; background-color: white; color: black;");
+        producaoTabLayout->addWidget(receitaProducao);
+        
+        // Adicionar botão aplicar solução
+        QPushButton* aplicarProducaoBtn = new QPushButton("🤖 APLICAR SOLUÇÃO PARA PRODUÇÃO BAIXA");
+        aplicarProducaoBtn->setStyleSheet("background-color: #28a745; color: white; font-weight: bold; padding: 10px; border-radius: 4px; border: none; font-size: 12px; margin: 10px;");
+        connect(aplicarProducaoBtn, &QPushButton::clicked, [this, popsDialog]() {
+            if (diagnosticoAtual == "producao_baixa") {
+                aplicarSolucaoAutomatica();
+                popsDialog->accept();
+            } else {
+                QMessageBox::information(this, "Informação", "Esta solução só pode ser aplicada quando o sistema detectar produção baixa.");
+            }
+        });
+        producaoTabLayout->addWidget(aplicarProducaoBtn);
+        
+        abas->addTab(producaoTabWidget, "🟠 Produção Baixa");
+        
+        // Aba 5: WOR Elevado
+        QWidget* worTabWidget = new QWidget();
+        QVBoxLayout* worTabLayout = new QVBoxLayout(worTabWidget);
+        
+        QTextEdit* receitaWor = new QTextEdit();
+        receitaWor->setReadOnly(true);
+        receitaWor->setText(gerarProcedimentoOperacional("wor_elevado"));
+        receitaWor->setStyleSheet("font-family: 'Consolas', monospace; background-color: white; color: black;");
+        worTabLayout->addWidget(receitaWor);
+        
+        // Adicionar botão aplicar solução
+        QPushButton* aplicarWorBtn = new QPushButton("🤖 APLICAR SOLUÇÃO PARA WOR ELEVADO");
+        aplicarWorBtn->setStyleSheet("background-color: #28a745; color: white; font-weight: bold; padding: 10px; border-radius: 4px; border: none; font-size: 12px; margin: 10px;");
+        connect(aplicarWorBtn, &QPushButton::clicked, [this, popsDialog]() {
+            if (diagnosticoAtual == "wor_elevado") {
+                aplicarSolucaoAutomatica();
+                popsDialog->accept();
+            } else {
+                QMessageBox::information(this, "Informação", "Esta solução só pode ser aplicada quando o sistema detectar WOR elevado.");
+            }
+        });
+        worTabLayout->addWidget(aplicarWorBtn);
+        
+        abas->addTab(worTabWidget, "🟤 WOR Elevado");
+        
+        // Aba 6: Resumo Geral
+        QTextEdit* resumoGeral = new QTextEdit();
+        resumoGeral->setReadOnly(true);
+        QString resumo = "📋 RESUMO EXECUTIVO - GUIA RÁPIDO DE DECISÃO\n\n";
+        resumo += "🚨 ORDEM DE PRIORIDADE OPERACIONAL:\n\n";
+        resumo += "1. PRESSÃO BAIXA (<2500 psi) - CRÍTICO ⚡\n";
+        resumo += "   → Injeção de água URGENTE\n";
+        resumo += "   → Sem pressão = sem produção\n\n";
+        resumo += "2. EXCESSO DE GÁS (>8000 m³) - SEGURANÇA 🔥\n";
+        resumo += "   → Flare imediato\n";
+        resumo += "   → Risco de explosão\n\n";
+        resumo += "3. GOR ELEVADO (>2500 scf/bbl) - EFICIÊNCIA ⚡\n";
+        resumo += "   → Injeção de gás\n";
+        resumo += "   → Restaura qualidade do óleo\n\n";
+        resumo += "4. WOR ELEVADO (>2.0) - ECONOMIA 💰\n";
+        resumo += "   → Controle de choke\n";
+        resumo += "   → Viabilidade econômica\n\n";
+        resumo += "5. PRODUÇÃO BAIXA - OTIMIZAÇÃO 📈\n";
+        resumo += "   → Diagnóstico múltiplas causas\n";
+        resumo += "   → Análise case-by-case\n\n";
+        resumo += "🎓 REGRAS DE OURO:\n";
+        resumo += "• NUNCA ignore pressão baixa\n";
+        resumo += "• SEMPRE priorize segurança (flare)\n";
+        resumo += "• MONITORE tendências, não valores pontuais\n";
+        resumo += "• DOCUMENTE todas as intervenções\n";
+        resumo += "• ENTENDA o 'porquê' antes de agir\n\n";
+        resumo += "💡 DICA FINAL:\n";
+        resumo += "Cada reservatório é único, mas os princípios físicos\n";
+        resumo += "são universais. Use este manual como base e adapte\n";
+        resumo += "conforme a experiência operacional.";
+        resumoGeral->setText(resumo);
+        resumoGeral->setStyleSheet("font-family: 'Consolas', monospace; background-color: white; color: black;");
+        abas->addTab(resumoGeral, "📊 Resumo Geral");
+        
+        layout->addWidget(abas);
+        
+        // Botão para fechar
+        QPushButton* fecharBtn = new QPushButton("✅ Entendi - Fechar Manual");
+        fecharBtn->setStyleSheet("background-color: #28a745; color: white; font-weight: bold; padding: 12px 24px; border-radius: 6px; border: none; font-size: 14px;");
+        connect(fecharBtn, &QPushButton::clicked, popsDialog, &QDialog::accept);
+        layout->addWidget(fecharBtn);
+        
+        popsDialog->exec();
+    }
+
+    void mostrarProcedimentoAtual() {
+        if (diagnosticoAtual == "normal") return;
+        
+        QDialog* popDialog = new QDialog(this);
+        popDialog->setWindowTitle("⚙️ PROCEDIMENTO OPERACIONAL ESPECÍFICO");
+        popDialog->resize(800, 600);
+        
+        QVBoxLayout* layout = new QVBoxLayout(popDialog);
+        
+        // Título com o problema específico
+        QString tituloProblema;
+        if (diagnosticoAtual == "pressao_baixa") tituloProblema = "🔴 PRESSÃO CRÍTICA";
+        else if (diagnosticoAtual == "gor_elevado") tituloProblema = "🟠 GOR ELEVADO";
+        else if (diagnosticoAtual == "excesso_gas") tituloProblema = "🟡 EXCESSO DE GÁS";
+        else if (diagnosticoAtual == "producao_baixa") tituloProblema = "🟠 PRODUÇÃO BAIXA";
+        else if (diagnosticoAtual == "wor_elevado") tituloProblema = "🟤 WOR ELEVADO";
+        
+        QLabel* titulo = new QLabel(tituloProblema + " - PROCEDIMENTO DETALHADO");
+        titulo->setAlignment(Qt::AlignCenter);
+        titulo->setStyleSheet("font-size: 16px; font-weight: bold; color: #ffffff; background-color: #dc3545; border-radius: 6px; padding: 12px; margin: 5px;");
+        layout->addWidget(titulo);
+        
+        // Conteúdo do procedimento
+        QTextEdit* procedimentoText = new QTextEdit();
+        procedimentoText->setReadOnly(true);
+        procedimentoText->setText(gerarProcedimentoOperacional(diagnosticoAtual));
+        procedimentoText->setStyleSheet("background-color: #001f3f; color: #ffffff; border: 2px solid #007bff; border-radius: 4px; padding: 12px; font-family: 'Consolas', 'Monaco', monospace; font-size: 13px; font-weight: bold; line-height: 1.4;");
+        layout->addWidget(procedimentoText);
+        
+        // Botões de ação
+        QHBoxLayout* botoesLayout = new QHBoxLayout();
+        
+        QPushButton* aplicarBtn = new QPushButton("🤖 APLICAR ESTE PROCEDIMENTO");
+        aplicarBtn->setStyleSheet("background-color: #28a745; color: white; font-weight: bold; padding: 12px 20px; border-radius: 6px; border: none; font-size: 14px;");
+        connect(aplicarBtn, &QPushButton::clicked, [this, popDialog]() {
+            aplicarSolucaoAutomatica();
+            popDialog->accept();
+        });
+        botoesLayout->addWidget(aplicarBtn);
+        
+        QPushButton* fecharBtn = new QPushButton("📖 ENTENDI - FECHAR");
+        fecharBtn->setStyleSheet("background-color: #6c757d; color: white; font-weight: bold; padding: 12px 20px; border-radius: 6px; border: none; font-size: 14px;");
+        connect(fecharBtn, &QPushButton::clicked, popDialog, &QDialog::accept);
+        botoesLayout->addWidget(fecharBtn);
+        
+        layout->addLayout(botoesLayout);
+        
+        popDialog->exec();
+    }
+
+    /*
+    🔊 ========================================================================
+    SISTEMA DE ALERTAS SONOROS INDUSTRIAIS
+    ========================================================================
+    
+    🎯 CONCEITO: Alertas auditivos padronizados para ambientes industriais
+    • CRÍTICO: Frequência alta, urgente (pressão baixa, segurança)
+    • ATENÇÃO: Frequência moderada, alerta (GOR, WOR, produção)
+    */
+    void emitirAlertaSonoro(QString tipoAlerta) {
+        static qint64 ultimoAlerta = 0;
+        qint64 tempoAtual = QDateTime::currentMSecsSinceEpoch();
+        
+        // Evitar spam sonoro - mínimo 30 segundos entre alertas
+        if (tempoAtual - ultimoAlerta < 30000) {
+            return;
+        }
+        ultimoAlerta = tempoAtual;
+        
+        if (tipoAlerta == "critico") {
+            // Padrão industrial para alertas críticos: 3 beeps rápidos
+            QApplication::beep();
+            QTimer::singleShot(200, []() { QApplication::beep(); });
+            QTimer::singleShot(400, []() { QApplication::beep(); });
+            
+            // Identificar causa específica do alerta - DIAGNÓSTICO COMPLETO
+            QString causa = "";
+            QStringList problemas;
+            
+            // Verificar TODOS os parâmetros críticos
+            if (reservatorio->pressao_psi < 2500.0) {
+                problemas << QString("PRESSÃO BAIXA: %1 psi (< 2500)").arg(reservatorio->pressao_psi, 0, 'f', 0);
+            }
+            if (reservatorio->volume_gas_m3 > 15000.0) {
+                problemas << QString("EXCESSO DE GÁS: %1 m³ (> 15000)").arg(reservatorio->volume_gas_m3, 0, 'f', 0);
+            }
+            if (reservatorio->water_oil_ratio > 0.4) {
+                problemas << QString("BSW ALTO: %1% (> 40%)").arg(reservatorio->water_oil_ratio * 100, 0, 'f', 1);
+            }
+            if (reservatorio->gas_oil_ratio > 1000.0) {
+                problemas << QString("GOR ALTO: %1 scf/bbl (> 1000)").arg(reservatorio->gas_oil_ratio, 0, 'f', 0);
+            }
+            if (reservatorio->em_emergencia) {
+                problemas << QString("SHUTDOWN: %1").arg(reservatorio->motivo_emergencia);
+            }
+            
+            if (!problemas.isEmpty()) {
+                causa = problemas.join(" | ");
+            } else {
+                // Log detalhado para debug se não identificou a causa
+                causa = QString("VALORES ATUAIS: P=%1psi, Gas=%2m³, BSW=%3%, GOR=%4")
+                       .arg(reservatorio->pressao_psi, 0, 'f', 0)
+                       .arg(reservatorio->volume_gas_m3, 0, 'f', 0)
+                       .arg(reservatorio->water_oil_ratio * 100, 0, 'f', 1)
+                       .arg(reservatorio->gas_oil_ratio, 0, 'f', 0);
+            }
+            
+            logMessage("🚨 ALERTA CRÍTICO: " + causa, "critico");
+            
+        } else if (tipoAlerta == "atencao") {
+            // Padrão para atenção: 2 beeps mais suaves
+            QApplication::beep();
+            QTimer::singleShot(500, []() { QApplication::beep(); });
+            
+            logMessage("⚠️ ALERTA: Situação requer atenção operacional.", "alerta");
+        }
+        
+        // Log operacional para auditoria (sem mencionar "sonoro" se não há som real)
+        QString logMsg = QString("Sistema de alerta ativado - Tipo: %1").arg(tipoAlerta.toUpper());
+        logMessage(logMsg, "sistema");
+    }
+
+    void atualizarDiagnosticoEducacional() {
+        // Durante inicialização, aguardar estabilização do sistema
+        if (!sistemaInicializado) {
+            tipoAlertaAtual = "NORMAL";
+            diagnosticoAtual = "normal";
+            return;
+        }
+        
+        // Aguardar período de estabilização adicional após inicialização
+        static qint64 tempoInicializacao = 0;
+        if (tempoInicializacao == 0) {
+            tempoInicializacao = QDateTime::currentMSecsSinceEpoch();
+        }
+        qint64 tempoDecorrido = QDateTime::currentMSecsSinceEpoch() - tempoInicializacao;
+        if (tempoDecorrido < 15000) { // 15 segundos de estabilização
+            tipoAlertaAtual = "NORMAL";
+            diagnosticoAtual = "normal";
+            return;
+        }
+        
+        // Análise de condições críticas - MÚLTIPLOS DIAGNÓSTICOS
+        QStringList statusList;
+        QStringList explicacaoList;
+        QStringList orientacaoList;
+        QStringList valoresList;
+        QString tipoProblema = "normal";
+        bool temProblema = false;
+        int problemasEncontrados = 0;
+
+        // 1. DIAGNÓSTICO: Pressão baixa (declínio crítico) - PRIORIDADE MÁXIMA
+        if (reservatorio->pressao_psi < 2500.0) {
+            problemasEncontrados++;
+            statusList << "🔴 PRESSÃO CRÍTICA";
+            
+            QString exp = "DECLÍNIO DE PRESSÃO DETECTADO!\n";
+            exp += "• Pressão atual: " + QString::number(reservatorio->pressao_psi, 'f', 0) + " psi\n";
+            exp += "• Abaixo de 2.500 psi (limite operacional)\n";
+            exp += "• Causa: Depleção natural sem reposição\n";
+            exp += "• Risco: Parada total de produção";
+            explicacaoList << exp;
+
+            QString ori = "INTERVENÇÃO URGENTE - INJEÇÃO DE ÁGUA:\n";
+            ori += "1. Localize 'Injeção de Água (bbl/dia)'\n";
+            ori += "2. Use valor recomendado abaixo\n";
+            ori += "3. Configure temperatura 60°C\n";
+            ori += "4. Monitore pressão nos próximos 10 min";
+            orientacaoList << ori;
+
+            double volumeRecomendado = std::max(15000.0, reservatorio->vazao_oleo_bopd * 1.2);
+            valoresList << QString("💧 Água: %1 bbl/dia @ 60°C").arg(volumeRecomendado, 0, 'f', 0);
+            
+            tipoProblema = "pressao_baixa"; // Prioridade máxima
+            temProblema = true;
+        }
+
+        // 2. DIAGNÓSTICO: GOR elevado
+        if (reservatorio->gas_oil_ratio > 2500.0) {
+            problemasEncontrados++;
+            statusList << "🟠 GOR ELEVADO";
+            
+            QString exp = "GOR (GAS-OIL RATIO) CRÍTICO!\n";
+            exp += "• GOR atual: " + QString::number(reservatorio->gas_oil_ratio, 'f', 0) + " scf/bbl\n";
+            exp += "• Limite: 2.500 scf/bbl\n";
+            exp += "• Causa: Pressão < ponto de bolha\n";
+            exp += "• Efeito: Gás livre reduz eficiência";
+            explicacaoList << exp;
+
+            QString ori = "INTERVENÇÃO - INJEÇÃO DE GÁS:\n";
+            ori += "1. Localize 'Injeção de Gás (Mm³/dia)'\n";
+            ori += "2. Use densidade 0.8 kg/m³\n";
+            ori += "3. GOR deve diminuir gradualmente\n";
+            ori += "4. Monitore estabilização da pressão";
+            orientacaoList << ori;
+
+            double gasRecomendado = std::min(8.0, reservatorio->gas_oil_ratio / 400.0);
+            valoresList << QString("⚡ Gás: %1 Mm³/dia @ 0.8 kg/m³").arg(gasRecomendado, 0, 'f', 1);
+            
+            if (tipoProblema == "normal") tipoProblema = "gor_elevado";
+            temProblema = true;
+        }
+
+        // 3. DIAGNÓSTICO: Volume de gás excessivo
+        if (reservatorio->volume_gas_m3 > 15000.0) {
+            problemasEncontrados++;
+            statusList << "🟡 EXCESSO DE GÁS";
+            
+            QString exp = "ACÚMULO EXCESSIVO DE GÁS!\n";
+            exp += "• Volume: " + QString::number(reservatorio->volume_gas_m3, 'f', 0) + " m³\n";
+            exp += "• Limite seguro: 15.000 m³\n";
+            exp += "• Risco: Sobrepressão perigosa\n";
+            exp += "• Ação: Liberação controlada urgente";
+            explicacaoList << exp;
+
+            QString ori = "SEGURANÇA - SISTEMA FLARE:\n";
+            ori += "1. Localize 'Liberação de Gás - Flare'\n";
+            ori += "2. Use 30% do volume atual\n";
+            ori += "3. Queima controlada do excesso\n";
+            ori += "4. Volume deve diminuir rapidamente";
+            orientacaoList << ori;
+
+            valoresList << QString("🔥 Flare: %1 m³/dia").arg(reservatorio->volume_gas_m3 * 0.3, 0, 'f', 0);
+            
+            if (tipoProblema == "normal") tipoProblema = "excesso_gas";
+            temProblema = true;
+        }
+
+        // 4. DIAGNÓSTICO: Produção baixa (mas pressão OK)
+        if (reservatorio->vazao_oleo_bopd < 12000.0 && reservatorio->pressao_psi > 2500.0) {
+            problemasEncontrados++;
+            statusList << "🟠 PRODUÇÃO SUBÓTIMA";
+            
+            QString exp = "VAZÃO ABAIXO DO POTENCIAL!\n";
+            exp += "• Vazão: " + QString::number(reservatorio->vazao_oleo_bopd, 'f', 0) + " bopd\n";
+            exp += "• Potencial: > 20.000 bopd\n";
+            exp += "• Pressão OK: " + QString::number(reservatorio->pressao_psi, 'f', 0) + " psi\n";
+            exp += "• Problema: Produtividade do poço";
+            explicacaoList << exp;
+
+            QString ori = "ANÁLISE E OTIMIZAÇÃO:\n";
+            ori += "1. Verifique gráficos de histórico\n";
+            ori += "2. Analise viscosidade vs temperatura\n";
+            ori += "3. Considere injeção leve de água\n";
+            ori += "4. Revise WOR se estiver alto";
+            orientacaoList << ori;
+
+            valoresList << "🔍 Múltiplas causas - análise detalhada";
+            
+            if (tipoProblema == "normal") tipoProblema = "producao_baixa";
+            temProblema = true;
+        }
+
+        // 5. DIAGNÓSTICO: WOR alto (novo diagnóstico)
+        if (reservatorio->water_oil_ratio > 2.0) {
+            problemasEncontrados++;
+            statusList << "🟤 WOR ELEVADO";
+            
+            QString exp = "WATER-OIL RATIO CRÍTICO!\n";
+            exp += "• WOR atual: " + QString::number(reservatorio->water_oil_ratio, 'f', 2) + "\n";
+            exp += "• Limite: 2.0 (econômico)\n";
+            exp += "• Causa: Coning de água severo\n";
+            exp += "• Efeito: Redução da receita líquida";
+            explicacaoList << exp;
+
+            QString ori = "CONTROLE DE CONING:\n";
+            ori += "1. Reduza drawdown (feche choke)\n";
+            ori += "2. Considere injeção de vapor\n";
+            ori += "3. Monitore produção de água\n";
+            ori += "4. Avalie viabilidade econômica";
+            orientacaoList << ori;
+
+            valoresList << "🎛️ Controle de choke + monitoramento";
+            
+            if (tipoProblema == "normal") tipoProblema = "wor_elevado";
+            temProblema = true;
+        }
+
+        // Compilar informações para interface
+        QString statusFinal, explicacaoFinal, orientacaoFinal, valoresFinal;
+        
+        if (problemasEncontrados == 0) {
+            statusFinal = "🟢 OPERAÇÃO NORMAL";
+            explicacaoFinal = "✅ Todos os parâmetros estão dentro dos limites operacionais normais.";
+            orientacaoFinal = "🎓 Continue monitorando. O sistema alertará quando houver necessidade de intervenção.";
+            valoresFinal = "Nenhuma intervenção necessária no momento.";
+        } else if (problemasEncontrados == 1) {
+            statusFinal = statusList.first();
+            explicacaoFinal = explicacaoList.first();
+            // ⚙️ Usar procedimento operacional padrão detalhado para problema único
+            orientacaoFinal = gerarProcedimentoOperacional(tipoProblema);
+            valoresFinal = valoresList.first();
+        } else {
+            statusFinal = QString("⚠️ MÚLTIPLOS PROBLEMAS (%1)").arg(problemasEncontrados);
+            explicacaoFinal = QString("🚨 DETECTADOS %1 PROBLEMAS SIMULTÂNEOS:\n\n").arg(problemasEncontrados);
+            for (int i = 0; i < explicacaoList.size(); ++i) {
+                explicacaoFinal += QString("PROBLEMA %1: %2\n").arg(i+1).arg(statusList[i]) + "\n";
+                explicacaoFinal += explicacaoList[i] + "\n" + QString(40, '-') + "\n\n";
+            }
+            
+            // ⚙️ Para múltiplos problemas, usar POP do problema prioritário + lista dos outros
+            orientacaoFinal = "🎯 ESTRATÉGIA PARA MÚLTIPLOS PROBLEMAS:\n\n";
+            orientacaoFinal += "⚙️ POP PRIORITÁRIO (MAIS CRÍTICO):\n";
+            orientacaoFinal += QString(60, '=') + "\n\n";
+            orientacaoFinal += gerarProcedimentoOperacional(tipoProblema) + "\n\n";
+            
+            orientacaoFinal += QString(60, '=') + "\n";
+            orientacaoFinal += "⚠️ OUTROS PROBLEMAS DETECTADOS:\n\n";
+            QStringList tiposProblemas = {"pressao_baixa", "gor_elevado", "excesso_gas", "producao_baixa", "wor_elevado"};
+            QStringList nomesProblemas = {"Pressão Baixa", "GOR Elevado", "Excesso de Gás", "Produção Subótima", "WOR Elevado"};
+            
+            for (int i = 0; i < statusList.size(); ++i) {
+                QString statusAtual = statusList[i];
+                if (!statusAtual.contains("CRÍTICA")) { // Não é o prioritário
+                    for (int j = 0; j < tiposProblemas.size(); ++j) {
+                        if (statusAtual.contains(nomesProblemas[j].toUpper())) {
+                            orientacaoFinal += QString("• %1: Resolver após problema crítico\n").arg(nomesProblemas[j]);
+                            orientacaoFinal += QString("  POP disponível - será mostrado quando for prioridade\n\n");
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            orientacaoFinal += "\n🎓 DICA EDUCACIONAL:\n";
+            orientacaoFinal += "• Sempre resolva problemas de pressão primeiro!\n";
+            orientacaoFinal += "• Pressão é a 'energia' do reservatório - sem ela, nada funciona\n";
+            orientacaoFinal += "• Outros problemas podem ser consequência da pressão baixa\n";
+            orientacaoFinal += "• Depois de estabilizar pressão, reavalie os outros problemas";
+            
+            valoresFinal = valoresList.join(" | ");
+        }
+
+        // Sistema de alertas sonoros e rastreamento de eventos
+        if (problemasEncontrados > 0) {
+            if (tipoProblema == "pressao_baixa" || tipoProblema == "excesso_gas") {
+                // Alerta crítico (vermelho) - Som mais agudo e urgente
+                tipoAlertaAtual = "CRITICO";
+                // Só emitir som após sistema inicializado para evitar alarmes falsos
+                if (sistemaInicializado) {
+                    emitirAlertaSonoro("critico");
+                }
+            } else {
+                // Alerta de atenção (laranja) - Som moderado
+                tipoAlertaAtual = "ATENCAO";
+                // Só emitir som após sistema inicializado para evitar alarmes falsos
+                if (sistemaInicializado) {
+                    emitirAlertaSonoro("atencao");
+                }
+            }
+        } else {
+            tipoAlertaAtual = "NORMAL";
+        }
+        
+        // Atualizar interface com informações resumidas
+        
+        // Mostrar apenas resumo na tela principal
+        QString resumoFinal;
+        if (problemasEncontrados == 0) {
+            resumoFinal = "✅ Todos os parâmetros dentro dos limites operacionais normais.";
+        } else if (problemasEncontrados == 1) {
+            resumoFinal = explicacaoFinal.left(200) + "..."; // Primeiras 200 chars
+        } else {
+            resumoFinal = QString("🚨 %1 problemas detectados simultaneamente. Resolva o mais crítico primeiro.").arg(problemasEncontrados);
+        }
+        
+        
+        diagnosticoAtual = tipoProblema;
+    }
+
+    void aplicarSolucaoAutomatica() {
+        if (diagnosticoAtual == "pressao_baixa") {
+            double volumeRecomendado = std::max(15000.0, reservatorio->vazao_oleo_bopd * 1.2);
+            suggestInputWater->setText(QString::number(volumeRecomendado, 'f', 0));
+            inputTempAgua->setText("60");
+            
+            // Aplicar injeção diretamente
+            reservatorio->injetarAgua(volumeRecomendado, 60.0);
+            logMessage(QString("🎓 APRENDIZADO: Injetando %1 bbl de água a 60°C.").arg(volumeRecomendado), "acao");
+            
+            QMessageBox::information(this, "✅ Solução Aplicada", 
+                QString("🎓 APRENDIZADO CONCLUÍDO!\n\n")
+                + "✅ Injeção de água iniciada: " + QString::number(volumeRecomendado, 'f', 0) + " bbl/dia\n"
+                + "✅ Temperatura configurada: 60°C\n\n"
+                + "📚 PRÓXIMOS PASSOS:\n"
+                + "• Observe o gráfico de pressão nos próximos minutos\n"  
+                + "• A pressão deve começar a subir\n"
+                + "• A vazão de óleo deve aumentar consequentemente\n"
+                + "• Este é o procedimento padrão para recuperação de pressão!");
+                
+        } else if (diagnosticoAtual == "gor_elevado") {
+            double gasRecomendado = std::min(8.0, reservatorio->gas_oil_ratio / 400.0);
+            suggestInputGas->setText(QString::number(gasRecomendado, 'f', 1));
+            inputDensidadeGas->setText("0.8");
+            
+            // Aplicar injeção diretamente
+            reservatorio->injetarGas(gasRecomendado, 0.8);
+            logMessage(QString("🎓 APRENDIZADO: Injetando %1 m³ de gás com densidade 0.8.").arg(gasRecomendado), "acao");
+            
+            QMessageBox::information(this, "✅ Solução Aplicada", 
+                QString("🎓 APRENDIZADO CONCLUÍDO!\n\n")
+                + "✅ Injeção de gás iniciada: " + QString::number(gasRecomendado, 'f', 1) + " Mm³/dia\n"
+                + "✅ Densidade configurada: 0.8 kg/m³\n\n"
+                + "📚 O QUE ESPERAR:\n"
+                + "• GOR deve diminuir gradualmente\n"
+                + "• Pressão do reservatório se estabiliza\n"
+                + "• Eficiência de produção melhora\n"
+                + "• Técnica usada em campos maduros mundialmente!");
+                
+        } else if (diagnosticoAtual == "excesso_gas") {
+            double flareRecomendado = reservatorio->volume_gas_m3 * 0.3;
+            
+            // Aplicar flare diretamente
+            reservatorio->liberarGasParaQueima(flareRecomendado);
+            logMessage(QString("🎓 APRENDIZADO: Acionando flare com vazão %1 m³/dia.").arg(flareRecomendado), "acao");
+            
+            QMessageBox::information(this, "✅ Solução Aplicada", 
+                QString("🎓 APRENDIZADO CONCLUÍDO!\n\n")
+                + "✅ Sistema flare ativado: " + QString::number(flareRecomendado, 'f', 0) + " m³/dia\n\n"
+                + "🔥 CONCEITO DE SEGURANÇA:\n"
+                + "• Flare queima excesso de gás de forma controlada\n"
+                + "• Previne sobrepressão perigosa no sistema\n"
+                + "• Volume de gás armazenado diminuirá rapidamente\n"
+                + "• Procedimento de segurança padrão na indústria!");
+        }
     }
 
     /*
@@ -2697,9 +3736,13 @@ suggestionExplanationLabel = new QLabel("🎓 SISTEMA DE ENSINO INTELIGENTE:\n\n
     void saveDataPoint() {
         DadosPontos ponto;
         
+        // GERAÇÃO DE UUID ÚNICO PARA KAFKA STREAMING
+        ponto.uuid = QUuid::createUuid().toString(QUuid::WithoutBraces);
+        
         // USO DO MÉTODO UTILITÁRIO (REFATORAÇÃO)
         ponto.tempo_min = obterTempoMinutos();  
         
+        // DADOS TÉCNICOS TRADICIONAIS
         ponto.vazao_oleo = reservatorio->vazao_oleo_bopd;
         ponto.pressao = reservatorio->pressao_psi;
         ponto.viscosidade_cp = reservatorio->viscosidade_oleo_cp;
@@ -2707,6 +3750,25 @@ suggestionExplanationLabel = new QLabel("🎓 SISTEMA DE ENSINO INTELIGENTE:\n\n
         ponto.temperatura = reservatorio->temperatura_C;
         ponto.gor = reservatorio->gas_oil_ratio;
         ponto.wor = reservatorio->water_oil_ratio;
+        
+        // NOVOS CAMPOS PARA ANÁLISE AVANÇADA E RASTREAMENTO DE EVENTOS
+        ponto.data_hora = QDateTime::currentDateTime().toString("yyyy-MM-ddThh:mm:ss");
+        
+        // Eventos do operador (limpar após uso)
+        ponto.evento_operador = ultimoEventoOperador;
+        if (!ultimoEventoOperador.isEmpty()) {
+            ultimoEventoOperador = ""; // Reset após capturar
+        }
+        
+        // Eventos físicos do reservatório 
+        ponto.evento_fisica = ultimoEventoFisica;
+        if (!ultimoEventoFisica.isEmpty()) {
+            ultimoEventoFisica = ""; // Reset após capturar
+        }
+        
+        // Tipo de alerta atual
+        ponto.alerta_tipo = tipoAlertaAtual;
+        
         dataPoints.append(ponto);
     }
 
@@ -2745,7 +3807,6 @@ suggestionExplanationLabel = new QLabel("🎓 SISTEMA DE ENSINO INTELIGENTE:\n\n
 
         if (reservatorio->volume_gas_m3 > 8000) {
             suggestion += "- Volume de gás alto: considere ativar liberação de gás (flare).\n";
-            suggestInputFlare->setText("8000");
             hasSuggestion = true;
         }
 
@@ -2754,7 +3815,6 @@ suggestionExplanationLabel = new QLabel("🎓 SISTEMA DE ENSINO INTELIGENTE:\n\n
             suggestInputWater->setPlaceholderText("Volume Água (bbl)");
             suggestInputGas->setPlaceholderText("Volume Gás (m³)");
             suggestInputVapor->setPlaceholderText("Tempo Vapor (s)");
-            suggestInputFlare->setPlaceholderText("Vazão Liberação Gás (scfd)");
         } else {
             suggestionExplanationLabel->setText(suggestion);
         }
@@ -2993,7 +4053,7 @@ suggestionExplanationLabel = new QLabel("🎓 SISTEMA DE ENSINO INTELIGENTE:\n\n
 
 /*
 🎓 ================================================================================
-🚀 FUNÇÃO MAIN - PONTO DE ENTRADA DO SIMULADOR EDUCACIONAL MLS-3A
+🚀 FUNÇÃO MAIN - PONTO DE ENTRADA DO SIMULADOR EDUCACIONAL ATS-7B
 ================================================================================
 
 📚 CONCEITO EDUCACIONAL:
@@ -3047,7 +4107,7 @@ int main(int argc, char *argv[]) {
     task manager e são usadas pelo sistema operacional para
     organizar logs e configurações.
     */
-    a.setApplicationName("Simulador MLS-3A Marlim Sul");  // Nome completo
+    a.setApplicationName("Simulador ATS-7B Atlântida Oriental");  // Nome completo
     a.setApplicationVersion("1.0");                         // Versão para auditoria
     
     /*
