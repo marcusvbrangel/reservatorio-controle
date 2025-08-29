@@ -1,5 +1,0 @@
-/home/wolf/Documentos/desenvolvimento/reservatorio-01/CMakeFiles/reservatorio_01.dir
-/home/wolf/Documentos/desenvolvimento/reservatorio-01/CMakeFiles/edit_cache.dir
-/home/wolf/Documentos/desenvolvimento/reservatorio-01/CMakeFiles/rebuild_cache.dir
-/home/wolf/Documentos/desenvolvimento/reservatorio-01/CMakeFiles/reservatorio_01_autogen_timestamp_deps.dir
-/home/wolf/Documentos/desenvolvimento/reservatorio-01/CMakeFiles/reservatorio_01_autogen.dir
