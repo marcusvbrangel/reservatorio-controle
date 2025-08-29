@@ -292,6 +292,7 @@ sistemas SCADA (Supervisory Control and Data Acquisition).
 #include <QHBoxLayout>        // Layout horizontal 
 #include <QPushButton>        // Botões clicáveis da interface
 #include <QTimer>             // Sistema de timers para alertas
+#include <QProcess>           // Para execução de comandos de áudio
 #include <QLabel>            // Rótulos de texto estático
 #include <QLineEdit>         // Campos de entrada de texto
 #include <QTextEdit>         // Área de texto multi-linha
@@ -312,7 +313,7 @@ sistemas SCADA (Supervisory Control and Data Acquisition).
 #include <QtCharts/QChartView>  // Visualizador de gráficos
 #include <QtCharts/QLineSeries> // Séries de linha para gráficos
 #include <QValueAxis>          // Eixos numéricos dos gráficos
-#include <QGraphicsSvgItem>    // Ícones SVG escaláveis
+#include <QtSvg/QSvgRenderer>  // Ícones SVG escaláveis
 #include <QIcon>               // Sistema de ícones
 
 /*
@@ -1581,6 +1582,17 @@ private slots:
         if (!sistemaInicializado && reservatorio->tempo_simulacao_s >= 10.0) {
             sistemaInicializado = true;
             logMessage("✅ Sistema totalmente inicializado - Monitoramento ativo", "sistema");
+            
+            // Teste de áudio para confirmar funcionamento
+            QTimer::singleShot(1000, [this]() {
+                logMessage("🔊 TESTE DE ÁUDIO: Verificando sistema de alertas sonoros...", "sistema");
+                QProcess::startDetached("bash", QStringList() << "-c" 
+                    << "timeout 0.3 speaker-test -t sine -f 400 -l 1 -s 1 >/dev/null 2>&1");
+                
+                QTimer::singleShot(500, [this]() {
+                    logMessage("✅ Sistema de áudio: Pronto para alertas", "sistema");
+                });
+            });
         }
 
         // Verificar e exibir alertas e sugestões
@@ -1660,6 +1672,36 @@ private slots:
             } else {
                 QMessageBox::warning(this, "Erro de Entrada", "Por favor, insira um valor numérico para a injeção de vapor.");
             }
+        } else if (buttonName == "relief_valve_btn") {
+            // Válvula de alívio para reduzir pressão alta
+            double pressaoAlvo = 3500.0; // Valor padrão seguro
+            double reducao = (reservatorio->pressao_psi - pressaoAlvo) * 0.3; // Reduz 30% do excesso
+            if (reducao > 0) {
+                reservatorio->pressao_psi -= reducao;
+                ultimoEventoOperador = QString("Válvula Alívio -%1psi").arg(reducao, 0, 'f', 0);
+                logMessage(QString("Válvula de alívio ativada. Pressão reduzida em %1 psi.").arg(reducao, 0, 'f', 0), "acao");
+            } else {
+                logMessage("Válvula de alívio: pressão já está em nível seguro.", "info");
+            }
+        } else if (buttonName == "heating_system_btn") {
+            // Sistema de aquecimento para aumentar temperatura
+            double tempAlvo = 90.0; // Temperatura ideal
+            double incremento = (tempAlvo - reservatorio->temperatura_C) * 0.5; // Aumenta 50% da diferença
+            if (incremento > 0) {
+                reservatorio->temperatura_C += incremento;
+                // Recalcular viscosidade com nova temperatura
+                reservatorio->viscosidade_oleo_cp = 8.5 * exp(-0.02 * (reservatorio->temperatura_C - 90.0));
+                ultimoEventoOperador = QString("Aquecimento +%1°C").arg(incremento, 0, 'f', 1);
+                logMessage(QString("Sistema de aquecimento ativado. Temperatura aumentada em %1°C.").arg(incremento, 0, 'f', 1), "acao");
+            } else {
+                logMessage("Sistema de aquecimento: temperatura já está adequada.", "info");
+            }
+        } else if (buttonName == "stimulation_btn") {
+            // Estimulação de poço para aumentar vazão
+            double incrementoVazao = 100.0; // Incremento base de 100 bopd
+            reservatorio->vazao_oleo_bopd += incrementoVazao;
+            ultimoEventoOperador = QString("Estimulação +%1bopd").arg(incrementoVazao, 0, 'f', 0);
+            logMessage(QString("Estimulação de poço realizada. Vazão aumentada em %1 bopd.").arg(incrementoVazao, 0, 'f', 0), "acao");
         } else if (buttonName == "abrir_valv_btn") {
             reservatorio->ajustarPressaoPoco(-50.0);
             ultimoEventoOperador = "Abrir Choke";
@@ -1755,6 +1797,130 @@ private slots:
         ultimoTempoGrafico = 0.0;
         
         logMessage("🗑️ Gráficos limpos - Iniciando nova coleta de dados", "info");
+    }
+
+    /*
+    🎯 ========================================================================
+    SISTEMA DE INJEÇÃO DE PROBLEMAS PARA TREINAMENTO
+    ========================================================================
+    
+    📚 CONCEITO: Sistema educacional que permite ao estudante injetar problemas
+    específicos no reservatório para praticar diagnóstico e intervenção.
+    */
+    void onProblemSelected() {
+        QComboBox* sender = qobject_cast<QComboBox*>(this->sender());
+        if (!sender) return;
+        
+        QString problemType = sender->currentData().toString();
+        if (problemType == "none") return;
+        
+        logMessage("🎯 TREINAMENTO: Injetando problema - " + sender->currentText(), "alerta");
+        
+        if (problemType == "pressao_baixa") {
+            injetarProblema_PressaoBaixa();
+        } else if (problemType == "pressao_alta") {
+            injetarProblema_PressaoAlta();
+        } else if (problemType == "excesso_gas") {
+            injetarProblema_ExcessoGas();
+        } else if (problemType == "bsw_alto") {
+            injetarProblema_BSWAlto();
+        } else if (problemType == "gor_alto") {
+            injetarProblema_GORAlto();
+        } else if (problemType == "viscosidade_alta") {
+            injetarProblema_ViscosidadeAlta();
+        } else if (problemType == "temperatura_baixa") {
+            injetarProblema_TemperaturaBaixa();
+        } else if (problemType == "vazao_baixa") {
+            injetarProblema_VazaoBaixa();
+        } else if (problemType == "emergencia_total") {
+            injetarProblema_EmergenciaTotal();
+        } else if (problemType == "normalizar") {
+            normalizarSistema();
+        }
+        
+        // Resetar seleção para evitar ativação acidental
+        sender->setCurrentIndex(0);
+    }
+    
+    // Injetar pressão baixa crítica
+    void injetarProblema_PressaoBaixa() {
+        reservatorio->pressao_psi = 2200.0;  // Abaixo de 2500 psi
+        logMessage("⬇️ PROBLEMA INJETADO: Pressão baixa (2200 psi)", "critico");
+        logMessage("💡 DICA: Use 'Injeção de Água' para aumentar pressão", "info");
+    }
+    
+    // Injetar pressão alta - risco de ruptura
+    void injetarProblema_PressaoAlta() {
+        reservatorio->pressao_psi = 4200.0;  // Acima de 4000 psi
+        logMessage("⬆️ PROBLEMA INJETADO: Pressão alta (4200 psi)", "critico");
+        logMessage("💡 DICA: Use 'Válvula de Alívio' para reduzir pressão", "info");
+    }
+    
+    // Injetar excesso de gás
+    void injetarProblema_ExcessoGas() {
+        reservatorio->volume_gas_m3 = 18000.0;  // Acima de 15000 m³
+        logMessage("💨 PROBLEMA INJETADO: Excesso de gás (18000 m³)", "critico");
+        logMessage("💡 DICA: Use 'Liberação de Gás - Flare' para reduzir volume", "info");
+    }
+    
+    // Injetar BSW alto (water coning)
+    void injetarProblema_BSWAlto() {
+        reservatorio->water_oil_ratio = 0.45;  // 45% BSW
+        logMessage("🌊 PROBLEMA INJETADO: BSW alto (45%)", "critico");
+        logMessage("💡 DICA: Reduza a vazão para controlar coning de água", "info");
+    }
+    
+    // Injetar GOR alto
+    void injetarProblema_GORAlto() {
+        reservatorio->gas_oil_ratio = 1200.0;  // Acima de 1000 scf/bbl
+        logMessage("⚡ PROBLEMA INJETADO: GOR alto (1200 scf/bbl)", "critico");
+        logMessage("💡 DICA: Use 'Injeção de Gás' para manter pressão acima do ponto de bolha", "info");
+    }
+    
+    // Injetar viscosidade alta
+    void injetarProblema_ViscosidadeAlta() {
+        reservatorio->viscosidade_oleo_cp = 15.0;  // Óleo muito viscoso
+        logMessage("🌡️ PROBLEMA INJETADO: Viscosidade alta (15 cp)", "critico");
+        logMessage("💡 DICA: Use 'Injeção de Vapor' para aquecer e reduzir viscosidade", "info");
+    }
+    
+    // Injetar temperatura baixa - afeta viscosidade
+    void injetarProblema_TemperaturaBaixa() {
+        reservatorio->temperatura_C = 75.0;  // Abaixo de 80°C
+        logMessage("🧊 PROBLEMA INJETADO: Temperatura baixa (75°C)", "critico");
+        logMessage("💡 DICA: Use 'Sistema de Aquecimento' para aumentar temperatura", "info");
+    }
+    
+    // Injetar vazão baixa - produção subótima
+    void injetarProblema_VazaoBaixa() {
+        reservatorio->vazao_oleo_bopd = 450.0;  // Abaixo de 500 bopd
+        logMessage("🚫 PROBLEMA INJETADO: Vazão baixa (450 bopd)", "critico");
+        logMessage("💡 DICA: Use 'Estimulação de Poço' para aumentar produção", "info");
+    }
+    
+    // Injetar emergência total
+    void injetarProblema_EmergenciaTotal() {
+        reservatorio->pressao_psi = 1500.0;        // Pressão crítica
+        reservatorio->volume_gas_m3 = 20000.0;     // Gás excessivo
+        reservatorio->water_oil_ratio = 0.50;      // 50% BSW
+        reservatorio->gas_oil_ratio = 1500.0;      // GOR altíssimo
+        logMessage("💥 EMERGÊNCIA TOTAL INJETADA: Múltiplos problemas simultâneos!", "critico");
+        logMessage("🚨 SHUTDOWN IMINENTE: Ação imediata necessária!", "critico");
+        logMessage("💡 DICA: Priorize pressão baixa primeiro, depois trate gás e BSW", "alerta");
+    }
+    
+    // Normalizar sistema (voltar aos parâmetros normais)
+    void normalizarSistema() {
+        reservatorio->pressao_psi = 2850.0;        // Pressão normal
+        reservatorio->volume_gas_m3 = 8500.0;      // Gás normal
+        reservatorio->water_oil_ratio = 0.15;      // 15% BSW normal
+        reservatorio->gas_oil_ratio = 420.0;       // GOR normal
+        reservatorio->viscosidade_oleo_cp = 2.8;   // Viscosidade normal
+        reservatorio->temperatura_C = 92.0;        // Temperatura normal
+        reservatorio->em_emergencia = false;       // Sair de emergência
+        
+        logMessage("✅ SISTEMA NORMALIZADO: Todos os parâmetros voltaram ao normal", "info");
+        logMessage("🎓 TREINAMENTO: Pronto para novo cenário de problema", "info");
     }
 
     void onDownloadCSVClicked() {
@@ -1970,6 +2136,12 @@ private:
     const QString iconGorPath = "M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8zM12 6a1 1 0 0 1 1 1v5a1 1 0 0 1-2 0V7a1 1 0 0 1 1-1zM12 14a1 1 0 1 1 1-1 1 1 0 0 1-1 1z'/>";
     const QString iconStatusPath = "M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z'/>";
 
+    // Sistema de tempo e cronômetro
+    QLabel* currentTimeLabel;           // Exibe hora atual
+    QLabel* operationTimeLabel;         // Contador de tempo de operação
+    QTimer* clockTimer;                 // Timer para atualizar displays de tempo
+    QTime operationStartTime;           // Tempo de início da operação
+
     QIcon createIcon(const QString& color, const QString& path) {
         QString svg = svgTemplate.arg(color, path);
         QByteArray data(svg.toUtf8());
@@ -2040,6 +2212,7 @@ private:
         mainLayout->setSpacing(15);
         mainLayout->setContentsMargins(20, 20, 20, 20);
 
+
         // Seção de Ícones SCADA em GroupBox
         QGroupBox* scadaGroupBox = new QGroupBox("Monitor SCADA - Status em Tempo Real");
         QHBoxLayout* scadaMainLayout = new QHBoxLayout(scadaGroupBox);
@@ -2047,7 +2220,7 @@ private:
         
         // Container do Logo - alinhado à esquerda
         QWidget* logoContainer = new QWidget();
-        logoContainer->setFixedSize(350, 80);
+        logoContainer->setFixedSize(550, 80);
         QHBoxLayout* logoLayout = new QHBoxLayout(logoContainer);
         logoLayout->setContentsMargins(10, 5, 10, 5);
         logoLayout->setSpacing(15);
@@ -2082,9 +2255,67 @@ private:
         
         logoLayout->addWidget(logoIcon);
         logoLayout->addWidget(clubText);
+        
+        // Adicionar relógios ao lado direito do logo
+        QWidget* clockContainer = new QWidget();
+        clockContainer->setFixedSize(180, 70);
+        QVBoxLayout* clockLayout = new QVBoxLayout(clockContainer);
+        clockLayout->setContentsMargins(5, 5, 5, 5);
+        clockLayout->setSpacing(3);
+        
+        // Relógio atual (hora real)
+        currentTimeLabel = new QLabel("🕐 --:--:--");
+        currentTimeLabel->setAlignment(Qt::AlignCenter);
+        currentTimeLabel->setStyleSheet(
+            "QLabel { "
+                "color: #00FF88; "
+                "font-size: 12px; "
+                "font-weight: bold; "
+                "font-family: 'Courier New', monospace; "
+                "background-color: transparent; "
+            "}"
+        );
+        
+        // Contador de tempo de operação
+        operationTimeLabel = new QLabel("⏱️ 00:00:00");
+        operationTimeLabel->setAlignment(Qt::AlignCenter);
+        operationTimeLabel->setStyleSheet(
+            "QLabel { "
+                "color: #FFA500; "
+                "font-size: 12px; "
+                "font-weight: bold; "
+                "font-family: 'Courier New', monospace; "
+                "background-color: transparent; "
+            "}"
+        );
+        
+        clockLayout->addWidget(currentTimeLabel);
+        clockLayout->addWidget(operationTimeLabel);
+        
+        // Estilo do container dos relógios
+        clockContainer->setStyleSheet(
+            "QWidget { "
+                "background-color: #1a1a1a; "
+                "border: 1px solid #333333; "
+                "border-radius: 6px; "
+            "}"
+        );
+        
+        // Configurar timer do sistema de relógio
+        clockTimer = new QTimer(this);
+        connect(clockTimer, &QTimer::timeout, this, &SimuladorWindow::updateClockDisplays);
+        clockTimer->start(1000); // Atualiza a cada segundo
+        
+        // Inicializar tempo de início da operação
+        operationStartTime = QTime::currentTime();
+        
+        // Atualização inicial dos displays
+        updateClockDisplays();
+        
+        logoLayout->addWidget(clockContainer);
         logoLayout->addStretch();
         
-        // Estilo do container
+        // Estilo do container do logo
         logoContainer->setStyleSheet(
             "QWidget { "
                 "background-color: #2a2a2a; "
@@ -2311,11 +2542,54 @@ private:
             "QPushButton:hover { background-color: #C82333; }"
         );
         
+        // Caixa de seleção para injeção de problemas (treinamento)
+        QLabel* problemLabel = new QLabel("🎯 Injetar Problema:");
+        problemLabel->setStyleSheet("color: #FF6B35; font-weight: bold; font-size: 12px;");
+        
+        QComboBox* problemSelector = new QComboBox();
+        problemSelector->addItem("🧩 Selecionar Problema...", "none");
+        problemSelector->addItem("⬇️ Pressão Baixa (< 2500 psi)", "pressao_baixa");
+        problemSelector->addItem("⬆️ Pressão Alta (> 4000 psi)", "pressao_alta");
+        problemSelector->addItem("💨 Excesso de Gás (> 15000 m³)", "excesso_gas");
+        problemSelector->addItem("🌊 BSW Alto (> 40%)", "bsw_alto");
+        problemSelector->addItem("⚡ GOR Crítico (> 1000 scf/bbl)", "gor_alto");
+        problemSelector->addItem("🌡️ Viscosidade Alta (> 10 cp)", "viscosidade_alta");
+        problemSelector->addItem("🧊 Temperatura Baixa (< 80°C)", "temperatura_baixa");
+        problemSelector->addItem("🚫 Vazão Baixa (< 500 bopd)", "vazao_baixa");
+        problemSelector->addItem("💥 Emergência Total", "emergencia_total");
+        problemSelector->addItem("✅ Normalizar Sistema", "normalizar");
+        
+        problemSelector->setStyleSheet(
+            "QComboBox { "
+                "background-color: #2d2d2d; "
+                "border: 2px solid #FF6B35; "
+                "color: #FFFFFF; "
+                "padding: 6px; "
+                "border-radius: 4px; "
+                "min-width: 200px; "
+                "font-weight: bold; "
+            "}"
+            "QComboBox::drop-down { border: none; }"
+            "QComboBox::down-arrow { "
+                "image: none; "
+                "border-left: 5px solid transparent; "
+                "border-right: 5px solid transparent; "
+                "border-top: 5px solid #FF6B35; "
+            "}"
+            "QComboBox QAbstractItemView { "
+                "background-color: #2d2d2d; "
+                "color: #FFFFFF; "
+                "selection-background-color: #FF6B35; "
+            "}"
+        );
+
         periodControlLayout->addWidget(periodLabel);
         periodControlLayout->addWidget(periodoSelector);
         periodControlLayout->addWidget(perfilLabel);
         periodControlLayout->addWidget(perfilSelector);
         periodControlLayout->addWidget(clearChartsBtn);
+        periodControlLayout->addWidget(problemLabel);
+        periodControlLayout->addWidget(problemSelector);
         periodControlLayout->addStretch(); // Espaço flexível
         
         chartsContainerLayout->addLayout(periodControlLayout);
@@ -2507,12 +2781,18 @@ private:
         QWidget* waterControl = createInterventionControl("Injeção de Água", "Volume (bbl)", "1000", "Temp (°C)", "100");
         QWidget* gasControl = createInterventionControl("Injeção de Gás", "Volume (m³)", "5000", "Densidade", "0.7");
         QWidget* vaporControl = createInterventionControl("Injeção de Vapor", "Tempo (s)", "500");
+        QWidget* reliefControl = createInterventionControl("Válvula de Alívio", "Pressão (psi)", "3500", "Taxa (%)", "20");
+        QWidget* heatingControl = createInterventionControl("Sistema de Aquecimento", "Temp (°C)", "90", "Potência (kW)", "150");
+        QWidget* stimulationControl = createInterventionControl("Estimulação de Poço", "Pressão (psi)", "3000", "Tempo (min)", "60");
         
         
-        // Posicionar controles em grid 2x2
+        // Posicionar controles em grid 3x2
         interventionGrid->addWidget(waterControl, 0, 0);
         interventionGrid->addWidget(gasControl, 0, 1);
         interventionGrid->addWidget(vaporControl, 1, 0);
+        interventionGrid->addWidget(reliefControl, 1, 1);
+        interventionGrid->addWidget(heatingControl, 2, 0);
+        interventionGrid->addWidget(stimulationControl, 2, 1);
         
         // Recuperar referências dos inputs
         suggestInputWater = qobject_cast<QLineEdit*>(waterControl->property("input1").value<QObject*>());
@@ -2528,6 +2808,22 @@ private:
         suggestInputVapor = qobject_cast<QLineEdit*>(vaporControl->property("input1").value<QObject*>());
         QPushButton* vaporBtn = qobject_cast<QPushButton*>(vaporControl->property("button").value<QObject*>());
         vaporBtn->setObjectName("inj_vapor_btn");
+        
+        // Novos controles de solução
+        QLineEdit* reliefInputPressure = qobject_cast<QLineEdit*>(reliefControl->property("input1").value<QObject*>());
+        QLineEdit* reliefInputRate = qobject_cast<QLineEdit*>(reliefControl->property("input2").value<QObject*>());
+        QPushButton* reliefBtn = qobject_cast<QPushButton*>(reliefControl->property("button").value<QObject*>());
+        reliefBtn->setObjectName("relief_valve_btn");
+        
+        QLineEdit* heatingInputTemp = qobject_cast<QLineEdit*>(heatingControl->property("input1").value<QObject*>());
+        QLineEdit* heatingInputPower = qobject_cast<QLineEdit*>(heatingControl->property("input2").value<QObject*>());
+        QPushButton* heatingBtn = qobject_cast<QPushButton*>(heatingControl->property("button").value<QObject*>());
+        heatingBtn->setObjectName("heating_system_btn");
+        
+        QLineEdit* stimulationInputPressure = qobject_cast<QLineEdit*>(stimulationControl->property("input1").value<QObject*>());
+        QLineEdit* stimulationInputTime = qobject_cast<QLineEdit*>(stimulationControl->property("input2").value<QObject*>());
+        QPushButton* stimulationBtn = qobject_cast<QPushButton*>(stimulationControl->property("button").value<QObject*>());
+        stimulationBtn->setObjectName("stimulation_btn");
         
 
         controlsLayout->addWidget(interventionGroupBox, 2);
@@ -2615,6 +2911,9 @@ suggestionExplanationLabel = new QLabel("🎓 SISTEMA DE ENSINO INTELIGENTE:\n\n
         connect(waterBtn, &QPushButton::clicked, this, &SimuladorWindow::onActionButtonClicked);
         connect(gasBtn, &QPushButton::clicked, this, &SimuladorWindow::onActionButtonClicked);
         connect(vaporBtn, &QPushButton::clicked, this, &SimuladorWindow::onActionButtonClicked);
+        connect(reliefBtn, &QPushButton::clicked, this, &SimuladorWindow::onActionButtonClicked);
+        connect(heatingBtn, &QPushButton::clicked, this, &SimuladorWindow::onActionButtonClicked);
+        connect(stimulationBtn, &QPushButton::clicked, this, &SimuladorWindow::onActionButtonClicked);
         connect(startBtn, &QPushButton::clicked, this, &SimuladorWindow::onActionButtonClicked);
         connect(stopBtn, &QPushButton::clicked, this, &SimuladorWindow::onActionButtonClicked);
         connect(openValveBtn, &QPushButton::clicked, this, &SimuladorWindow::onActionButtonClicked);
@@ -2628,6 +2927,7 @@ suggestionExplanationLabel = new QLabel("🎓 SISTEMA DE ENSINO INTELIGENTE:\n\n
         connect(perfilSelector, QOverload<int>::of(&QComboBox::currentIndexChanged), 
                 this, &SimuladorWindow::onPerfilChanged);
         connect(clearChartsBtn, &QPushButton::clicked, this, &SimuladorWindow::onClearChartsClicked);
+        connect(problemSelector, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &SimuladorWindow::onProblemSelected);
     }
 
     /*
@@ -3361,10 +3661,8 @@ suggestionExplanationLabel = new QLabel("🎓 SISTEMA DE ENSINO INTELIGENTE:\n\n
         ultimoAlerta = tempoAtual;
         
         if (tipoAlerta == "critico") {
-            // Padrão industrial para alertas críticos: 3 beeps rápidos
-            QApplication::beep();
-            QTimer::singleShot(200, []() { QApplication::beep(); });
-            QTimer::singleShot(400, []() { QApplication::beep(); });
+            // Padrão industrial para alertas críticos: som urgente
+            emitirSomAlerta("critico");
             
             // Identificar causa específica do alerta - DIAGNÓSTICO COMPLETO
             QString causa = "";
@@ -3401,9 +3699,8 @@ suggestionExplanationLabel = new QLabel("🎓 SISTEMA DE ENSINO INTELIGENTE:\n\n
             logMessage("🚨 ALERTA CRÍTICO: " + causa, "critico");
             
         } else if (tipoAlerta == "atencao") {
-            // Padrão para atenção: 2 beeps mais suaves
-            QApplication::beep();
-            QTimer::singleShot(500, []() { QApplication::beep(); });
+            // Padrão para atenção: som moderado
+            emitirSomAlerta("atencao");
             
             logMessage("⚠️ ALERTA: Situação requer atenção operacional.", "alerta");
         }
@@ -3491,6 +3788,81 @@ suggestionExplanationLabel = new QLabel("🎓 SISTEMA DE ENSINO INTELIGENTE:\n\n
             valoresList << QString("⚡ Gás: %1 Mm³/dia @ 0.8 kg/m³").arg(gasRecomendado, 0, 'f', 1);
             
             if (tipoProblema == "normal") tipoProblema = "gor_elevado";
+            temProblema = true;
+        }
+        
+        // 3. DIAGNÓSTICO: Pressão Alta (risco de ruptura)
+        if (reservatorio->pressao_psi > 4000.0) {
+            problemasEncontrados++;
+            statusList << "🔴 PRESSÃO ALTA";
+            
+            QString exp = "PRESSÃO EXCESSIVA - RISCO DE RUPTURA!\n";
+            exp += "• Pressão atual: " + QString::number(reservatorio->pressao_psi, 'f', 0) + " psi\n";
+            exp += "• Limite seguro: 4000 psi\n";
+            exp += "• Causa: Sobrecarregamento do sistema\n";
+            exp += "• Risco: Ruptura de equipamentos";
+            explicacaoList << exp;
+            
+            QString ori = "INTERVENÇÃO URGENTE - VÁLVULA DE ALÍVIO:\n";
+            ori += "1. Localize 'Válvula de Alívio'\n";
+            ori += "2. Configure pressão alvo: 3500 psi\n";
+            ori += "3. Ative para redução controlada\n";
+            ori += "4. Monitore queda gradual de pressão";
+            orientacaoList << ori;
+            
+            valoresList << QString("⬆️ Alívio: Reduzir para 3500 psi");
+            
+            if (tipoProblema == "normal") tipoProblema = "pressao_alta";
+            temProblema = true;
+        }
+        
+        // 4. DIAGNÓSTICO: Temperatura Baixa (afeta viscosidade)
+        if (reservatorio->temperatura_C < 80.0) {
+            problemasEncontrados++;
+            statusList << "🟡 TEMPERATURA BAIXA";
+            
+            QString exp = "TEMPERATURA SUBÓTIMA!\n";
+            exp += "• Temperatura atual: " + QString::number(reservatorio->temperatura_C, 'f', 1) + "°C\n";
+            exp += "• Ideal: > 80°C\n";
+            exp += "• Causa: Perda térmica natural\n";
+            exp += "• Efeito: Alta viscosidade reduz produção";
+            explicacaoList << exp;
+            
+            QString ori = "INTERVENÇÃO - SISTEMA DE AQUECIMENTO:\n";
+            ori += "1. Localize 'Sistema de Aquecimento'\n";
+            ori += "2. Configure temperatura: 90°C\n";
+            ori += "3. Ajuste potência: 150 kW\n";
+            ori += "4. Monitore redução de viscosidade";
+            orientacaoList << ori;
+            
+            valoresList << QString("🧊 Aquecimento: 90°C @ 150kW");
+            
+            if (tipoProblema == "normal") tipoProblema = "temperatura_baixa";
+            temProblema = true;
+        }
+        
+        // 5. DIAGNÓSTICO: Vazão Baixa (produção subótima)
+        if (reservatorio->vazao_oleo_bopd < 500.0) {
+            problemasEncontrados++;
+            statusList << "🟠 VAZÃO BAIXA";
+            
+            QString exp = "PRODUÇÃO SUBÓTIMA!\n";
+            exp += "• Vazão atual: " + QString::number(reservatorio->vazao_oleo_bopd, 'f', 0) + " bopd\n";
+            exp += "• Mínimo esperado: 500 bopd\n";
+            exp += "• Causa: Redução de permeabilidade\n";
+            exp += "• Efeito: Baixa rentabilidade operacional";
+            explicacaoList << exp;
+            
+            QString ori = "INTERVENÇÃO - ESTIMULAÇÃO DE POÇO:\n";
+            ori += "1. Localize 'Estimulação de Poço'\n";
+            ori += "2. Configure pressão: 3000 psi\n";
+            ori += "3. Defina tempo: 60 minutos\n";
+            ori += "4. Monitore aumento de vazão";
+            orientacaoList << ori;
+            
+            valoresList << QString("🚫 Estimulação: 3000psi x 60min");
+            
+            if (tipoProblema == "normal") tipoProblema = "vazao_baixa";
             temProblema = true;
         }
 
@@ -3900,12 +4272,16 @@ suggestionExplanationLabel = new QLabel("🎓 SISTEMA DE ENSINO INTELIGENTE:\n\n
         🐛 LOG DE DEBUG (apenas para desenvolvimento):
         Confirma que os gráficos estão sendo atualizados
         */
+        // Log de gráficos removido para evitar poluição do log
+        // Mensagens de atualização de gráficos não são necessárias para o usuário final
+        /*
         if (forcarAtualizacao) {
             logMessage(QString("📊 Gráficos atualizados (forçado) - Tempo: %1 min").arg(tempoAtual, 0, 'f', 1), "info");
         } else {
             logMessage(QString("📊 Gráficos atualizados - Tempo: %1 min (Δ%2 min)")
                       .arg(tempoAtual, 0, 'f', 1).arg(tempoDecorrido, 0, 'f', 1), "info");
         }
+        */
         
         /*
         🗃️ OTIMIZAÇÃO DE PERFORMANCE:
@@ -4045,6 +4421,88 @@ suggestionExplanationLabel = new QLabel("🎓 SISTEMA DE ENSINO INTELIGENTE:\n\n
         */
         QString statusColor = reservatorio->em_emergencia ? "red" : "green";
         statusIconLabel->setPixmap(createIcon(statusColor, iconStatusPath).pixmap(48, 48));
+    }
+    
+    /*
+    🔊 ========================================================================
+    SISTEMA DE ÁUDIO PARA ALERTAS INDUSTRIAIS
+    ========================================================================
+    
+    📚 CONCEITO EDUCACIONAL:
+    Sistemas SCADA industriais utilizam alertas sonoros diferenciados para 
+    garantir que operadores sejam notificados de condições críticas mesmo
+    quando não estão olhando para a tela.
+    
+    🏭 PADRÕES INDUSTRIAIS:
+    • CRÍTICO: Som agudo e repetitivo (800-1000 Hz)
+    • ATENÇÃO: Som moderado e intermitente (400-600 Hz)
+    • Duração limitada para evitar fadiga auditiva
+    */
+    void emitirSomAlerta(const QString& tipo) {
+        if (tipo == "critico") {
+            // Som crítico: 3 beeps agudos rápidos (800 Hz)
+            // Método 1: speaker-test (principal)
+            QProcess::startDetached("bash", QStringList() << "-c" 
+                << "for i in {1..3}; do timeout 0.5 speaker-test -t sine -f 800 -l 1 -s 1 >/dev/null 2>&1; sleep 0.1; done");
+            
+            // Método 2: paplay como fallback (PulseAudio)
+            QTimer::singleShot(100, []() {
+                QProcess::startDetached("bash", QStringList() << "-c" 
+                    << "which paplay >/dev/null 2>&1 && for i in {1..3}; do paplay /usr/share/sounds/alsa/Noise.wav 2>/dev/null || true; sleep 0.1; done");
+            });
+            
+        } else if (tipo == "atencao") {
+            // Som de atenção: 2 beeps moderados (500 Hz)
+            QProcess::startDetached("bash", QStringList() << "-c" 
+                << "for i in {1..2}; do timeout 0.5 speaker-test -t sine -f 500 -l 1 -s 1 >/dev/null 2>&1; sleep 0.3; done");
+            
+            // Método alternativo
+            QTimer::singleShot(100, []() {
+                QProcess::startDetached("bash", QStringList() << "-c" 
+                    << "which paplay >/dev/null 2>&1 && for i in {1..2}; do paplay /usr/share/sounds/alsa/Side_Left.wav 2>/dev/null || true; sleep 0.3; done");
+            });
+        }
+        
+        // Log para confirmação
+        logMessage(QString("🔊 ALERTA SONORO: %1 emitido").arg(tipo.toUpper()), "sistema");
+    }
+    
+    /*
+    🕐 ========================================================================
+    MÉTODO DE ATUALIZAÇÃO DOS DISPLAYS DE TEMPO
+    ========================================================================
+    
+    📚 CONCEITO EDUCACIONAL:
+    Sistema de cronometragem para interfaces SCADA industriais, permitindo
+    monitorar tempo real e duração de operações para análise de performance.
+    
+    🏭 APLICAÇÃO INDUSTRIAL:
+    • Controle de turnos operacionais
+    • Monitoramento de tempo de processo
+    • Rastreamento de uptime/downtime
+    • Análise de eficiência temporal
+    */
+    void updateClockDisplays() {
+        // Atualizar relógio de tempo atual
+        QDateTime currentDateTime = QDateTime::currentDateTime();
+        QString currentTimeStr = QString("🕐 %1").arg(currentDateTime.toString("hh:mm:ss"));
+        currentTimeLabel->setText(currentTimeStr);
+        
+        // Calcular tempo decorrido de operação
+        QTime currentTime = QTime::currentTime();
+        int elapsedMs = operationStartTime.msecsTo(currentTime);
+        
+        // Converter para horas, minutos e segundos
+        int totalSeconds = elapsedMs / 1000;
+        int hours = totalSeconds / 3600;
+        int minutes = (totalSeconds % 3600) / 60;
+        int seconds = totalSeconds % 60;
+        
+        QString operationTimeStr = QString("⏱️ %1:%2:%3")
+            .arg(hours, 2, 10, QChar('0'))
+            .arg(minutes, 2, 10, QChar('0'))
+            .arg(seconds, 2, 10, QChar('0'));
+        operationTimeLabel->setText(operationTimeStr);
     }
 };
 
