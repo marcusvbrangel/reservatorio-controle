@@ -1585,12 +1585,12 @@ private slots:
             
             // Teste de áudio para confirmar funcionamento
             QTimer::singleShot(1000, [this]() {
-                logMessage("🔊 TESTE DE ÁUDIO: Verificando sistema de alertas sonoros...", "sistema");
+                logMessage("🔊 PLATFORM AUDIO TEST: Verificando sistema de alertas da plataforma...", "sistema");
                 QProcess::startDetached("bash", QStringList() << "-c" 
-                    << "timeout 0.3 speaker-test -t sine -f 400 -l 1 -s 1 >/dev/null 2>&1");
+                    << "timeout 0.5 speaker-test -t sine -f 400 -l 1 -s 1 >/dev/null 2>&1; sleep 0.1; timeout 0.5 speaker-test -t sine -f 600 -l 1 -s 1 >/dev/null 2>&1");
                 
-                QTimer::singleShot(500, [this]() {
-                    logMessage("✅ Sistema de áudio: Pronto para alertas", "sistema");
+                QTimer::singleShot(1500, [this]() {
+                    logMessage("✅ Platform Audio System: Operacional (Padrões NORSOK S-001)", "sistema");
                 });
             });
         }
@@ -1602,8 +1602,8 @@ private slots:
             if (!reservatorio->motivo_emergencia.isEmpty()) {
                 logMessage(reservatorio->motivo_emergencia, "critico");
                 ultimoEventoFisica = "Shutdown: " + reservatorio->motivo_emergencia.mid(24); // Remove "🚨 SHUTDOWN AUTOMÁTICO ATIVADO: "
-                // ALERTA SONORO CRÍTICO PARA SHUTDOWN AUTOMÁTICO
-                emitirAlertaSonoro("critico");
+                // ALERTA SONORO DE EVACUAÇÃO PARA SHUTDOWN AUTOMÁTICO
+                emitirAlertaSonoro("emergencia");
                 reservatorio->motivo_emergencia = ""; // Limpar para não repetir
             } else {
                 logMessage("ALERTA CRÍTICO: Shutdown Automático!", "critico");
@@ -4425,46 +4425,146 @@ suggestionExplanationLabel = new QLabel("🎓 SISTEMA DE ENSINO INTELIGENTE:\n\n
     
     /*
     🔊 ========================================================================
-    SISTEMA DE ÁUDIO PARA ALERTAS INDUSTRIAIS
+    SISTEMA DE ÁUDIO - PADRÕES TIPO SIRENE DE BOMBEIRO
     ========================================================================
     
     📚 CONCEITO EDUCACIONAL:
-    Sistemas SCADA industriais utilizam alertas sonoros diferenciados para 
-    garantir que operadores sejam notificados de condições críticas mesmo
-    quando não estão olhando para a tela.
+    Baseado em padrões de sirene de emergência dos corpos de bombeiros.
+    Cada tipo de alarme usa varredura de frequência (sweep) com tons diferenciados.
     
-    🏭 PADRÕES INDUSTRIAIS:
-    • CRÍTICO: Som agudo e repetitivo (800-1000 Hz)
-    • ATENÇÃO: Som moderado e intermitente (400-600 Hz)
-    • Duração limitada para evitar fadiga auditiva
+    🚨 PADRÕES DE SIRENE IMPLEMENTADOS:
+    • SIRENE CRÍTICA: Sweep rápido 400-1200 Hz (3 ciclos) - Problemas críticos
+    • SIRENE ATENÇÃO: Sweep médio 300-800 Hz (2 ciclos) - Problemas moderados  
+    • SIRENE EVACUAÇÃO: Sweep intenso 200-1500 Hz (4 ciclos) - Emergência máxima
+    
+    🎵 IMPLEMENTAÇÃO TÉCNICA:
+    • Varredura contínua de frequências simulando sirenes reais
+    • Velocidade e intensidade diferenciadas por tipo de alarme
+    • Padrão "sweep" ascendente e descendente como bombeiros
+    • Sistema robusto com fallback para diferentes ambientes de áudio
     */
     void emitirSomAlerta(const QString& tipo) {
         if (tipo == "critico") {
-            // Som crítico: 3 beeps agudos rápidos (800 Hz)
-            // Método 1: speaker-test (principal)
-            QProcess::startDetached("bash", QStringList() << "-c" 
-                << "for i in {1..3}; do timeout 0.5 speaker-test -t sine -f 800 -l 1 -s 1 >/dev/null 2>&1; sleep 0.1; done");
+            // SIRENE CRÍTICA - Padrão tipo bombeiro vermelho
+            // Sweep rápido 400-1200 Hz (3 ciclos intensos)
+            emitirProcessAlarm();
             
-            // Método 2: paplay como fallback (PulseAudio)
-            QTimer::singleShot(100, []() {
-                QProcess::startDetached("bash", QStringList() << "-c" 
-                    << "which paplay >/dev/null 2>&1 && for i in {1..3}; do paplay /usr/share/sounds/alsa/Noise.wav 2>/dev/null || true; sleep 0.1; done");
-            });
+        } else if (tipo == "emergencia") {
+            // SIRENE EVACUAÇÃO - Padrão tipo bombeiro máxima urgência
+            // Sweep ultra-intenso 200-1500 Hz (4 ciclos de evacuação)
+            emitirAbandonPlatform();
             
         } else if (tipo == "atencao") {
-            // Som de atenção: 2 beeps moderados (500 Hz)
-            QProcess::startDetached("bash", QStringList() << "-c" 
-                << "for i in {1..2}; do timeout 0.5 speaker-test -t sine -f 500 -l 1 -s 1 >/dev/null 2>&1; sleep 0.3; done");
-            
-            // Método alternativo
-            QTimer::singleShot(100, []() {
-                QProcess::startDetached("bash", QStringList() << "-c" 
-                    << "which paplay >/dev/null 2>&1 && for i in {1..2}; do paplay /usr/share/sounds/alsa/Side_Left.wav 2>/dev/null || true; sleep 0.3; done");
-            });
+            // SIRENE ATENÇÃO - Padrão tipo bombeiro laranja
+            // Sweep médio 300-800 Hz (2 ciclos moderados)
+            emitirGeneralAlarm();
         }
         
-        // Log para confirmação
-        logMessage(QString("🔊 ALERTA SONORO: %1 emitido").arg(tipo.toUpper()), "sistema");
+        // Log para confirmação com padrão sirene
+        logMessage(QString("🚨 FIRE DEPT SIREN: %1 pattern emitted").arg(tipo.toUpper()), "sistema");
+    }
+    
+    /*
+    🚨 SIRENE CRÍTICA - Padrão tipo bombeiro (vermelho)
+    Usado para: Pressão baixa, excesso de gás, problemas críticos
+    Som: Sirene aguda subindo e descendo (400-1200 Hz)
+    */
+    void emitirProcessAlarm() {
+        // Sirene crítica: varredura rápida 400-1200-400 Hz (3 ciclos)
+        QString comando = 
+            "{ "
+            "for freq in 400 500 600 700 800 900 1000 1100 1200 1100 1000 900 800 700 600 500; do "
+            "timeout 0.1 speaker-test -t sine -f $freq -l 1 -s 1 >/dev/null 2>&1 & "
+            "sleep 0.05; "
+            "done; "
+            "sleep 0.2; "
+            "for freq in 400 500 600 700 800 900 1000 1100 1200 1100 1000 900 800 700 600 500; do "
+            "timeout 0.1 speaker-test -t sine -f $freq -l 1 -s 1 >/dev/null 2>&1 & "
+            "sleep 0.05; "
+            "done; "
+            "sleep 0.2; "
+            "for freq in 400 500 600 700 800 900 1000 1100 1200 1100 1000 900 800 700 600 500; do "
+            "timeout 0.1 speaker-test -t sine -f $freq -l 1 -s 1 >/dev/null 2>&1 & "
+            "sleep 0.05; "
+            "done; "
+            "wait; } &";
+            
+        QProcess::startDetached("bash", QStringList() << "-c" << comando);
+        
+        // Fallback simplificado
+        QTimer::singleShot(100, []() {
+            QProcess::startDetached("bash", QStringList() << "-c" 
+                << "which paplay >/dev/null 2>&1 && { "
+                   "for i in {1..3}; do "
+                   "paplay /usr/share/sounds/alsa/Noise.wav 2>/dev/null & "
+                   "sleep 0.8; "
+                   "done; wait; } || true");
+        });
+    }
+    
+    /*
+    ⚠️ SIRENE ATENÇÃO - Padrão tipo bombeiro (laranja)
+    Usado para: BSW alto, temperatura baixa, problemas moderados
+    Som: Sirene média subindo e descendo (300-800 Hz, mais lenta)
+    */
+    void emitirGeneralAlarm() {
+        // Sirene atenção: varredura média 300-800-300 Hz (2 ciclos mais lentos)
+        QString comando = 
+            "{ "
+            "for freq in 300 350 400 450 500 550 600 650 700 750 800 750 700 650 600 550 500 450 400 350; do "
+            "timeout 0.15 speaker-test -t sine -f $freq -l 1 -s 1 >/dev/null 2>&1 & "
+            "sleep 0.1; "
+            "done; "
+            "sleep 0.5; "
+            "for freq in 300 350 400 450 500 550 600 650 700 750 800 750 700 650 600 550 500 450 400 350; do "
+            "timeout 0.15 speaker-test -t sine -f $freq -l 1 -s 1 >/dev/null 2>&1 & "
+            "sleep 0.1; "
+            "done; "
+            "wait; } &";
+            
+        QProcess::startDetached("bash", QStringList() << "-c" << comando);
+        
+        // Fallback simplificado
+        QTimer::singleShot(100, []() {
+            QProcess::startDetached("bash", QStringList() << "-c" 
+                << "which paplay >/dev/null 2>&1 && { "
+                   "for i in {1..2}; do "
+                   "paplay /usr/share/sounds/alsa/Side_Left.wav 2>/dev/null & "
+                   "sleep 1.0; "
+                   "done; wait; } || true");
+        });
+    }
+    
+    /*
+    🆘 SIRENE EVACUAÇÃO - Padrão tipo bombeiro (vermelho intenso)
+    Usado para: Emergência total, múltiplas falhas críticas
+    Som: Sirene grave e intensa subindo rápido (200-1500 Hz, máxima urgência)
+    */
+    void emitirAbandonPlatform() {
+        // Sirene evacuação: varredura completa ultra-rápida 200-1500-200 Hz (4 ciclos intensos)
+        QString comando = 
+            "{ "
+            "for cycle in {1..4}; do "
+            "for freq in 200 300 400 500 600 700 800 900 1000 1100 1200 1300 1400 1500 1400 1300 1200 1100 1000 900 800 700 600 500 400 300; do "
+            "timeout 0.05 speaker-test -t sine -f $freq -l 1 -s 1 >/dev/null 2>&1 & "
+            "sleep 0.02; "
+            "done; "
+            "sleep 0.1; "
+            "done; "
+            "wait; } &";
+            
+        QProcess::startDetached("bash", QStringList() << "-c" << comando);
+        
+        // Fallback intensificado
+        QTimer::singleShot(50, []() {
+            QProcess::startDetached("bash", QStringList() << "-c" 
+                << "which paplay >/dev/null 2>&1 && { "
+                   "for i in {1..4}; do "
+                   "paplay /usr/share/sounds/alsa/Noise.wav 2>/dev/null & "
+                   "paplay /usr/share/sounds/alsa/Side_Left.wav 2>/dev/null & "
+                   "sleep 0.5; "
+                   "done; wait; } || true");
+        });
     }
     
     /*
